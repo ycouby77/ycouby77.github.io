@@ -34,6 +34,9 @@ const projects = defineCollection({
             alt: z.string(),
             label: z.string(),
             caption: z.string(),
+            // CAD renders on a plain backdrop: the backdrop colour. Where the image must fit a
+            // fixed box, it's shown whole on this colour (seamless) instead of being cropped.
+            matte: z.string().optional(),
           }),
         )
         .default([]),

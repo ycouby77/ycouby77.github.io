@@ -16,11 +16,13 @@ const { project, index, layout = 'split' } = Astro.props;
 const { data } = project;
 const num = String(index).padStart(2, '0');
 const cover = data.cover ?? data.gallery[0];
+// CAD renders (with a matte colour) are shown whole on that colour; photos fill the box.
+const matte = cover && 'matte' in cover ? cover.matte : undefined;
 const href = `/projects/${project.id}`;
 ---
 
 <article class={`sheet ${layout}`}>
-  <a class="media" href={href} tabindex="-1" aria-hidden="true">
+  <a class:list={['media', { matted: matte }]} href={href} tabindex="-1" aria-hidden="true" style={matte ? `--matte: ${matte}` : undefined}>
     {
       cover && (
         <Image
@@ -76,6 +78,12 @@ const href = `/projects/${project.id}`;
   .media :global(img) {
     width: 100%;
     height: 100%;
+    object-fit: cover;
+  }
+  .media.matted {
+    background: var(--matte);
+  }
+  .media.matted :global(img) {
     object-fit: contain;
   }
   .wide .tb {

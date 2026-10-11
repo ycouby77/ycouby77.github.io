@@ -24,7 +24,7 @@ results:
   - Modular design allows component swaps without a full rebuild
 gallery:
   - { src: ./build.png, alt: The finished RC vehicle with red 3D-printed suspension arms and exposed electronics, label: Build, caption: Operational vehicle }
-  - { src: ./cad.png, alt: SolidWorks assembly of the full vehicle chassis and suspension, label: CAD, caption: Full SolidWorks assembly }
+  - { src: ./cad.png, alt: SolidWorks assembly of the full vehicle chassis and suspension, label: CAD, caption: Full SolidWorks assembly, matte: '#c4c8d3' }
 viewer:
   title: Vehicle in 3D
   models:

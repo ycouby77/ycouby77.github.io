@@ -93,16 +93,17 @@ const { items, label } = Astro.props;
   .slide[hidden] {
     display: none;
   }
+  /* No box: the image keeps its own shape and the leftover space is just page. */
   .frame {
-    aspect-ratio: 16 / 9;
-    background: var(--img-bg);
-    border: 1px solid var(--line);
-    overflow: hidden;
+    height: clamp(280px, 62vh, 640px);
+    display: grid;
+    place-items: center;
   }
   .frame :global(img) {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
   }
   figcaption {
     display: grid;
@@ -187,7 +188,7 @@ const { items, label } = Astro.props;
       gap: 0.75rem;
     }
     .frame {
-      aspect-ratio: 4 / 3;
+      height: clamp(240px, 50vh, 420px);
     }
     .arrow {
       top: calc(37% - 22px);

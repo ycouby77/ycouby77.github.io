@@ -24,9 +24,9 @@ results:
   - Approved quotes secured for the primary parts
   - Design moving to fabrication for the hand prototype
 gallery:
-  - { src: ./before.png, alt: Side view of the original clutch with a thin keyed shaft, label: Before, caption: 'Ø1 mm shaft, keyed coupling' }
-  - { src: ./after.png, alt: Side view of the redesigned clutch with a thicker D-profile shaft, label: After, caption: 'Ø2 mm D-profile shaft, revised stator' }
-  - { src: ./output-side.png, alt: Three-quarter view of the redesigned clutch output side, label: Redesign, caption: Output side }
+  - { src: ./before.png, alt: Side view of the original clutch with a thin keyed shaft, label: Before, caption: 'Ø1 mm shaft, keyed coupling', matte: '#ffffff' }
+  - { src: ./after.png, alt: Side view of the redesigned clutch with a thicker D-profile shaft, label: After, caption: 'Ø2 mm D-profile shaft, revised stator', matte: '#ffffff' }
+  - { src: ./output-side.png, alt: Three-quarter view of the redesigned clutch output side, label: Redesign, caption: Output side, matte: '#ffffff' }
 galleryNote: Exterior views only. Internal geometry is omitted because the lab's research is ongoing.
 references:
   - title: A Concept of a Miniaturized MR Clutch Utilizing MR Fluid in Squeeze Mode

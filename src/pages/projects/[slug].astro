@@ -40,7 +40,9 @@ const num = String(data.order).padStart(2, '0');
       data.gallery.length > 0 && (
         <section class:list={['gallery', data.galleryLayout]} style={`--n: ${data.gallery.length}`} aria-label="Images">
           {data.gallery.map((g) => (
-            <figure>
+            // Justified row: each figure grows in proportion to its image's aspect ratio,
+            // so every image in the row shares one height with no cropping or bars.
+            <figure style={`--ar: ${g.src.width / g.src.height}`}>
               <div class="frame">
                 {data.galleryLayout === 'stack' ? (
                   <Image src={g.src} alt={g.alt} widths={[960, 1440, 1920]} sizes="(max-width: 1100px) 100vw, 1100px" quality={90} />
@@ -142,16 +144,19 @@ const num = String(data.order).padStart(2, '0');
     font-size: clamp(2.2rem, 6vw, 3.8rem);
   }
   .gallery {
-    display: grid;
-    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    display: flex;
     gap: 1rem;
     margin-top: 2.5rem;
+  }
+  .gallery:not(.stack) figure {
+    flex: var(--ar) 1 0%;
+    min-width: 0;
   }
   figure {
     margin: 0;
   }
   .gallery.stack {
-    grid-template-columns: minmax(0, 1fr);
+    flex-direction: column;
     max-width: 1100px;
     margin-inline: auto;
     gap: 2rem;
@@ -164,17 +169,13 @@ const num = String(data.order).padStart(2, '0');
     height: auto;
   }
   .frame {
-    background: var(--img-bg);
-    border: 1px solid var(--line);
-    aspect-ratio: 4 / 5;
-    display: grid;
-    place-items: center;
+    aspect-ratio: var(--ar);
     overflow: hidden;
   }
   .frame :global(img) {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
   }
   figcaption {
     margin-top: 0.5rem;
@@ -261,10 +262,7 @@ const num = String(data.order).padStart(2, '0');
   }
   @media (max-width: 800px) {
     .gallery {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .frame {
-      aspect-ratio: 4 / 3;
+      flex-direction: column;
     }
     .cols {
       grid-template-columns: minmax(0, 1fr);

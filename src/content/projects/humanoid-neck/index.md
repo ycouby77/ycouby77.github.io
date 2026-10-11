@@ -23,7 +23,7 @@ results:
   - Final neck mounted on the robot with the full head, and handed off to the software and torso teams
 gallery:
   - { src: ./bench-prototype.png, alt: Bench prototype of the neck with two servos and a red triangular top plate, label: '01', caption: Bench prototype }
-  - { src: ./final-cad.png, alt: Onshape CAD of the neck mechanism with the head attached, label: '02', caption: Final CAD with head }
+  - { src: ./final-cad.png, alt: Onshape CAD of the neck mechanism with the head attached, label: '02', caption: Final CAD with head, matte: '#ffffff' }
   - { src: ./on-baker-bot.png, alt: The finished neck and head mounted on the Baker Bot torso, label: '03', caption: Integrated on Baker Bot }
 viewer:
   title: Neck assembly in 3D

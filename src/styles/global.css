@@ -12,7 +12,8 @@
   --line-strong: #383c43;
   --accent: #ff6a3d;
   --accent-ink: #1a0b05;
-  --img-bg: #ffffff; /* matches the white backgrounds of the CAD renders */
+  /* Behind images: CAD renders have transparent backgrounds, so this shows through. */
+  --img-bg: var(--surface);
   --font-display: 'Geist Variable', system-ui, sans-serif;
   --font-body: 'Geist Variable', system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;

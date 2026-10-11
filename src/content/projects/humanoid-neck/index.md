@@ -27,7 +27,6 @@ gallery:
   - { src: ./on-baker-bot.png, alt: The finished neck and head mounted on the Baker Bot torso, label: '03', caption: Integrated on Baker Bot }
 viewer:
   title: Neck assembly in 3D
-  note: Exported from Onshape and simplified for the web.
   models:
     - { label: Tilt assembly, src: /models/humanoid-neck/neck-assembly.glb, rotation: [-90, 0, 0] }
 ---

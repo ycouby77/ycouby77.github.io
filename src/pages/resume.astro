@@ -3,36 +3,71 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import { profile } from '../data/profile';
-import page1 from '../assets/resume/page-1.png';
-import page2 from '../assets/resume/page-2.png';
+import resume1 from '../assets/resume/resume-1.png';
+import cv1 from '../assets/resume/cv-1.png';
+import cv2 from '../assets/resume/cv-2.png';
 
-// Page images are rendered from the PDF (200 dpi) so the resume reads the same on
-// every device; phones often can't show an embedded PDF inline.
-const pages = [
-  { src: page1, alt: 'Resume page 1: contact details, education at Western University, and experience at the ARM Lab, Western Engineering Autopilot, and Western Formula Racing, plus leadership roles.' },
-  { src: page2, alt: 'Resume page 2: projects, skills, and awards and certifications.' },
+// Page images are rendered from the PDFs (200 dpi) so they read the same on every
+// device; phones often can't show an embedded PDF inline.
+const resumePages = [
+  { src: resume1, alt: 'One-page resume: summary, education at Western University, experience at the ARM Lab, Western Engineering Autopilot, and Western Formula Racing, projects, and skills.' },
 ];
-const fileName = profile.resumePdf.split('/').pop();
+const cvPages = [
+  { src: cv1, alt: 'CV page 1: education, experience at the ARM Lab, Western Engineering Autopilot, and Western Formula Racing, and leadership roles.' },
+  { src: cv2, alt: 'CV page 2: projects, skills, and awards and certifications.' },
+];
+const file = (path: string) => path.split('/').pop();
 ---
 
-<Base title="Resume" description={`Resume of ${profile.name}, ${profile.program}.`}>
+<Base title="Resume" description={`Resume and CV of ${profile.name}, ${profile.program}.`}>
   <section class="wrap resume">
     <header class="head">
-      <h1>Resume</h1>
+      <div>
+        <h1>Resume</h1>
+        <p class="sub">One page, the short version.</p>
+      </div>
       <div class="actions">
-        <a class="btn btn-primary" href={profile.resumePdf} download={fileName}><Icon name="download" /> Download PDF</a>
+        <a class="btn btn-primary" href={profile.resumePdf} download={file(profile.resumePdf)}><Icon name="download" /> Download resume</a>
         <a class="btn" href={profile.resumePdf} target="_blank" rel="noopener">Open in new tab</a>
       </div>
     </header>
     <div class="pages">
       {
-        pages.map((p, i) => (
+        resumePages.map((p) => (
           <figure class="page">
-            <Image src={p.src} alt={p.alt} widths={[700, 1100, 1700]} sizes="(max-width: 900px) 100vw, 850px" loading={i === 0 ? 'eager' : 'lazy'} />
+            <Image src={p.src} alt={p.alt} widths={[700, 1100, 1700]} sizes="(max-width: 900px) 100vw, 850px" loading="eager" quality={90} />
           </figure>
         ))
       }
     </div>
+
+    <details class="cv">
+      <summary>
+        <span class="cv-text">
+          <span class="cv-title">CV</span>
+          <span class="sub">The detailed version: every role, project, and skill (2 pages).</span>
+        </span>
+        <span class="btn cv-toggle"><span class="when-closed">Preview CV</span><span class="when-open">Hide CV</span></span>
+      </summary>
+      <div class="cv-body">
+        <div class="actions">
+          <a class="btn btn-primary" href={profile.cvPdf} download={file(profile.cvPdf)}><Icon name="download" /> Download CV</a>
+          <a class="btn" href={profile.cvPdf} target="_blank" rel="noopener">Open in new tab</a>
+        </div>
+        <div class="pages">
+          {
+            cvPages.map((p) => (
+              <figure class="page">
+                <Image src={p.src} alt={p.alt} widths={[700, 1100, 1700]} sizes="(max-width: 900px) 100vw, 850px" quality={90} />
+              </figure>
+            ))
+          }
+        </div>
+      </div>
+    </details>
+    <p class="cv-direct">
+      Just want the file? <a href={profile.cvPdf} download={file(profile.cvPdf)}>Download the CV</a>
+    </p>
   </section>
 </Base>
 
@@ -40,17 +75,27 @@ const fileName = profile.resumePdf.split('/').pop();
   .resume {
     padding-block: clamp(2.5rem, 6vw, 4.5rem);
   }
+  .head,
+  .pages,
+  .cv,
+  .cv-direct {
+    max-width: 850px;
+    margin-inline: auto;
+  }
   .head {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: end;
     gap: 1rem 2rem;
-    max-width: 850px;
-    margin: 0 auto 2rem;
+    margin-bottom: 2rem;
   }
   h1 {
     font-size: clamp(2.2rem, 5vw, 3.2rem);
+  }
+  .sub {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
   }
   .actions {
     display: flex;
@@ -60,8 +105,6 @@ const fileName = profile.resumePdf.split('/').pop();
   .pages {
     display: grid;
     gap: 1.5rem;
-    max-width: 850px;
-    margin: 0 auto;
   }
   .page {
     margin: 0;
@@ -72,5 +115,57 @@ const fileName = profile.resumePdf.split('/').pop();
   .page :global(img) {
     width: 100%;
     height: auto;
+  }
+
+  .cv {
+    margin-top: 3.5rem;
+    border-top: 1px solid var(--line-strong);
+  }
+  summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem 2rem;
+    padding-block: 1.5rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .cv-title {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .cv-toggle {
+    pointer-events: none; /* the whole summary row is the control */
+  }
+  summary:hover .cv-toggle,
+  summary:focus-visible .cv-toggle {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .when-open,
+  .cv[open] .when-closed {
+    display: none;
+  }
+  .cv[open] .when-open {
+    display: inline;
+  }
+  .cv-body {
+    display: grid;
+    gap: 1.5rem;
+    padding-bottom: 1rem;
+  }
+  .cv-direct {
+    margin-top: 0.5rem;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .cv[open] + .cv-direct {
+    display: none;
   }
 </style>

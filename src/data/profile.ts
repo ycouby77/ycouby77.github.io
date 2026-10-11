@@ -15,6 +15,8 @@ export const profile = {
   linkedin: 'https://www.linkedin.com/in/yacoubderradji',
   github: 'https://github.com/ycouby77',
   resumePdf: '/Yacoub_Derradji_Resume.pdf',
+  // Longer, more detailed version (2 pages), offered under the resume.
+  cvPdf: '/Yacoub_Derradji_CV.pdf',
   // Shown as a status tag; set to null to hide.
   availability: null as string | null,
 };

@@ -388,7 +388,9 @@ const { title, note, models, bare = false, cycle = 0 } = Astro.props;
     margin: 0;
     color: var(--ink-2);
     font-size: 0.9rem;
-    min-height: 1.4em;
+  }
+  .caption:empty {
+    display: none;
   }
   .note {
     margin: 0;

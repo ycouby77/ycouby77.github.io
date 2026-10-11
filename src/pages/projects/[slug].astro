@@ -153,6 +153,7 @@ const num = String(data.order).padStart(2, '0');
   .gallery.stack {
     grid-template-columns: minmax(0, 1fr);
     max-width: 1100px;
+    margin-inline: auto;
     gap: 2rem;
   }
   .stack .frame {
@@ -180,6 +181,9 @@ const num = String(data.order).padStart(2, '0');
   }
   .tag {
     color: var(--accent);
+  }
+  .stack figcaption {
+    text-align: center;
   }
   .note {
     font-size: 0.85rem;

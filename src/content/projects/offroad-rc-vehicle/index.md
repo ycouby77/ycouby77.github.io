@@ -27,17 +27,16 @@ gallery:
   - { src: ./cad.png, alt: SolidWorks assembly of the full vehicle chassis and suspension, label: CAD, caption: Full SolidWorks assembly }
 viewer:
   title: Vehicle in 3D
-  note: The full SolidWorks assembly plus the final printed parts, taken straight from the build files.
   models:
-    - { label: Full assembly, src: /models/offroad-rc-vehicle/assembly.glb, finish: plastic, caption: 'Complete vehicle assembly: chassis, drivetrain, steering, suspension, and electronics.' }
-    - { label: Front chassis, src: /models/offroad-rc-vehicle/front-chassis.stl, caption: Front half of the split chassis. }
-    - { label: Rear chassis, src: /models/offroad-rc-vehicle/rear-chassis.stl, caption: Rear half of the split chassis. }
-    - { label: Motor mount, src: /models/offroad-rc-vehicle/motor-mount.stl, caption: Motor mount. }
-    - { label: Helical gear, src: /models/offroad-rc-vehicle/driven-helical-gear.stl, caption: Driven double-helical gear. }
-    - { label: Drive coupler, src: /models/offroad-rc-vehicle/drive-coupler.stl, caption: Drive coupler. }
-    - { label: Steering knuckle, src: /models/offroad-rc-vehicle/steering-knuckle.stl, caption: Front steering knuckle. }
-    - { label: Lower arm, src: /models/offroad-rc-vehicle/front-lower-arm.stl, caption: Front lower suspension arm. }
-    - { label: Upper arm, src: /models/offroad-rc-vehicle/front-upper-arm.stl, caption: Front upper suspension arm. }
+    - { label: Full assembly, src: /models/offroad-rc-vehicle/assembly.glb, finish: plastic }
+    - { label: Front chassis, src: /models/offroad-rc-vehicle/front-chassis.stl }
+    - { label: Rear chassis, src: /models/offroad-rc-vehicle/rear-chassis.stl }
+    - { label: Motor mount, src: /models/offroad-rc-vehicle/motor-mount.stl }
+    - { label: Helical gear, src: /models/offroad-rc-vehicle/driven-helical-gear.stl }
+    - { label: Drive coupler, src: /models/offroad-rc-vehicle/drive-coupler.stl }
+    - { label: Steering knuckle, src: /models/offroad-rc-vehicle/steering-knuckle.stl }
+    - { label: Lower arm, src: /models/offroad-rc-vehicle/front-lower-arm.stl }
+    - { label: Upper arm, src: /models/offroad-rc-vehicle/front-upper-arm.stl }
 ---
 
 - Designed the full vehicle CAD in SolidWorks: chassis, drivetrain, steering, suspension, body

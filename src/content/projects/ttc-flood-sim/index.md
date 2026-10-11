@@ -21,8 +21,7 @@ specs:
 results:
   - 'Example: a 200 m flood at King & Bathurst cuts 32 road segments, closes 1 stop, and adds 1.78 km to the shuttle route'
   - The browser version matches the Python simulator on the same scenario and recomputes in about 10 ms, so the map updates live
-gallery:
-  - { src: ./map-preview.svg, alt: 'Street map around King and Bathurst with the normal 504 route in grey, flooded roads in red, and the shuttle detour in orange looping north to Queen Street', label: Simulation, caption: 'King & Bathurst flood: the shuttle detours via Queen St West' }
+cover: { src: ./map-preview.svg, alt: 'Street map around King and Bathurst with the normal 504 route in grey, flooded roads in red, and the shuttle detour in orange looping north to Queen Street' }
 simulation:
   src: /data/flood/route504.json
 links:

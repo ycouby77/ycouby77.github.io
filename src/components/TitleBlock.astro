@@ -1,0 +1,62 @@
+---
+// Engineering-drawing style title block: a bordered strip of labelled cells.
+// Used under project images and at the top of case studies.
+interface Props {
+  cells: { label: string; value: string }[];
+}
+const { cells } = Astro.props;
+---
+
+<dl class="title-block" style={`--cols: ${cells.length}`}>
+  {
+    cells.map((c) => (
+      <div class="cell">
+        <dt>{c.label}</dt>
+        <dd>{c.value}</dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .title-block {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    margin: 0;
+    border: 1px solid var(--line-strong);
+    border-top: 2px solid var(--accent);
+    background: var(--bg);
+    font-family: var(--font-mono);
+  }
+  .cell {
+    padding: 0.5rem 0.65rem;
+    border-left: 1px solid var(--line-strong);
+    min-width: 0;
+  }
+  .cell:first-child {
+    border-left: 0;
+  }
+  dt {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  dd {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 640px) {
+    .title-block {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .cell:nth-child(odd) {
+      border-left: 0;
+    }
+    .cell:nth-child(n + 3) {
+      border-top: 1px solid var(--line-strong);
+    }
+  }
+</style>

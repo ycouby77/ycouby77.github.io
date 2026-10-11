@@ -1,0 +1,257 @@
+---
+import { getCollection, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import TitleBlock from '../../components/TitleBlock.astro';
+import ModelViewer from '../../components/ModelViewer.astro';
+import FloodMap from '../../components/FloodMap.astro';
+import PaperCard from '../../components/PaperCard.astro';
+
+export async function getStaticPaths() {
+  const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, next: projects[(i + 1) % projects.length] },
+  }));
+}
+
+const { project, next } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+const num = String(data.order).padStart(2, '0');
+---
+
+<Base title={data.title} description={data.summary}>
+  <article class="wrap case">
+    <header class="head">
+      <h1>{data.title}</h1>
+      <p class="lede">{data.summary}</p>
+      <TitleBlock
+        cells={[
+          { label: 'Sheet', value: num },
+          { label: 'Context', value: data.context },
+          { label: 'Period', value: data.period },
+          ...data.specs,
+        ].slice(0, 6)}
+      />
+    </header>
+
+    {
+      data.gallery.length > 0 && (
+        <section class="gallery" style={`--n: ${data.gallery.length}`} aria-label="Images">
+          {data.gallery.map((g) => (
+            <figure>
+              <div class="frame">
+                <Image src={g.src} alt={g.alt} widths={[400, 700, 1000]} sizes="(max-width: 800px) 100vw, 400px" />
+              </div>
+              <figcaption class="meta">
+                <span class="tag">{g.label}</span> · {g.caption}
+              </figcaption>
+            </figure>
+          ))}
+        </section>
+      )
+    }
+    {data.galleryNote && <p class="note">{data.galleryNote}</p>}
+
+    {
+      data.references.length > 0 && (
+        <section class="refs" aria-labelledby="refs-title">
+          <h2 id="refs-title" class="label">Builds on</h2>
+          {data.references.map((r) => (
+            <PaperCard {...r} />
+          ))}
+        </section>
+      )
+    }
+
+    {data.simulation && <FloodMap src={data.simulation.src} />}
+    {data.viewer && <ModelViewer {...data.viewer} />}
+
+    <div class="cols">
+      <aside>
+        {
+          data.objective && (
+            <>
+              <h2 class="label">Objective</h2>
+              <p class="objective">{data.objective}</p>
+            </>
+          )
+        }
+        {
+          data.tools.length > 0 && (
+            <>
+              <h2 class="label">Tools</h2>
+              <p class="tools">{data.tools.join(', ')}</p>
+            </>
+          )
+        }
+      </aside>
+      <div class="main">
+        <h2 class="label">What I did</h2>
+        <div class="prose"><Content /></div>
+        {
+          data.results.length > 0 && (
+            <>
+              <h2 class="label">Results</h2>
+              <ul class="prose-list">
+                {data.results.map((r) => (
+                  <li>{r}</li>
+                ))}
+              </ul>
+            </>
+          )
+        }
+        {
+          data.links.length > 0 && (
+            <div class="links">
+              {data.links.map((l) => (
+                <a class="btn" href={l.href}>
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <nav class="pager" aria-label="More projects">
+      <a href="/#work" class="meta">← All work</a>
+      <a href={`/projects/${next.id}`} class="next">
+        <span class="meta">Next sheet</span>
+        <span class="next-title">{next.data.title} →</span>
+      </a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .case {
+    padding-block: clamp(2.5rem, 7vw, 5rem);
+  }
+  .head {
+    display: grid;
+    gap: 1.25rem;
+  }
+  h1 {
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+  }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+  figure {
+    margin: 0;
+  }
+  .frame {
+    background: var(--img-bg);
+    border: 1px solid var(--line);
+    aspect-ratio: 4 / 5;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .frame :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  figcaption {
+    margin-top: 0.5rem;
+  }
+  .tag {
+    color: var(--accent);
+  }
+  .note {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--muted);
+  }
+  .refs {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 760px;
+    margin-top: 2.5rem;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 2.5rem;
+    margin-top: 3rem;
+  }
+  aside {
+    border-right: 1px solid var(--line);
+    padding-right: 2rem;
+  }
+  aside .label:not(:first-child),
+  .main .label:not(:first-child) {
+    margin-top: 2rem;
+  }
+  .cols .label {
+    margin-bottom: 0.5rem;
+  }
+  .objective {
+    color: var(--ink-2);
+    font-size: 1.05rem;
+  }
+  .tools {
+    margin: 0;
+    color: var(--ink-2);
+  }
+  .prose :global(ul),
+  .prose-list {
+    padding-left: 1.1rem;
+    color: var(--ink-2);
+  }
+  .prose :global(li),
+  .prose-list li {
+    margin-block: 0.45rem;
+  }
+  .prose :global(li::marker),
+  .prose-list li::marker {
+    color: var(--accent);
+  }
+  .links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line-strong);
+  }
+  .pager a {
+    text-decoration: none;
+  }
+  .next {
+    display: grid;
+    text-align: right;
+  }
+  .next-title {
+    font: var(--display-weight) 1.4rem/1.2 var(--font-display);
+  }
+  @media (max-width: 800px) {
+    .gallery {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .frame {
+      aspect-ratio: 4 / 3;
+    }
+    .cols {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    aside {
+      border-right: 0;
+      padding-right: 0;
+    }
+  }
+</style>

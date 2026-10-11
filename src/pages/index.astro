@@ -1,0 +1,486 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import ProjectSheet from '../components/ProjectSheet.astro';
+import RoleList from '../components/RoleList.astro';
+import TitleBlock from '../components/TitleBlock.astro';
+import ModelViewer from '../components/ModelViewer.astro';
+import Icon from '../components/Icon.astro';
+import { profile, facts, heroProject, heroModelSrc, experience, leadership, skills, awards, education } from '../data/profile';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const featured = projects.filter((p) => p.data.featured);
+const other = projects.filter((p) => !p.data.featured);
+const hero = projects.find((p) => p.id === heroProject) ?? featured[0];
+const firstModel = hero?.data.viewer?.models[0];
+const heroModel = firstModel && { ...firstModel, src: heroModelSrc ?? firstModel.src };
+const heroNum = hero ? String(featured.indexOf(hero) + 1).padStart(2, '0') : '';
+
+// Photo strip: each project's first and last image (usually two different views),
+// interleaved across projects so the strip doesn't open with one project's near-duplicates.
+const perProject = featured.map((p) => {
+  const g = p.data.gallery;
+  return (g.length > 1 ? [g[0], g[g.length - 1]] : g).map((img) => ({ ...img, project: p }));
+});
+const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.length)) }, (_, i) =>
+  perProject.map((l) => l[i]).filter(Boolean),
+).flat();
+---
+
+<Base>
+  <section class="hero wrap">
+    <div class="hero-text">
+      <p class="eyebrow">{profile.name}</p>
+      <h1>{profile.headline}</h1>
+      <p class="intro">{profile.tagline}</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#work">View work</a>
+        <a class="btn" href="/resume">Resume</a>
+        <a class="btn icon-btn" href={profile.linkedin} rel="me noopener" target="_blank">
+          <Icon name="brand-linkedin" /> LinkedIn
+        </a>
+      </div>
+    </div>
+    {
+      hero && heroModel && (
+        <figure class="hero-media">
+          <ModelViewer title={`${hero.data.title}, 3D model`} models={[heroModel]} bare />
+          <figcaption>
+            <a href={`/projects/${hero.id}`} class="hero-caption">
+              <TitleBlock
+                cells={[
+                  { label: 'Sheet', value: heroNum },
+                  { label: 'Project', value: hero.data.title },
+                  { label: 'Model', value: 'Live 3D: drag to rotate' },
+                ]}
+              />
+            </a>
+          </figcaption>
+        </figure>
+      )
+    }
+    <dl class="stats">
+      {
+        facts.map((s) => (
+          <div>
+            <dt class="meta">{s.label}</dt>
+            <dd class="val">{s.value}</dd>
+            <dd class="note">{s.note}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <section class="photos" aria-labelledby="photos-title">
+    <h2 id="photos-title" class="visually-hidden">Build photos</h2>
+    <ul class="strip">
+      {
+        photos.map((ph) => (
+          <li>
+            <a href={`/projects/${ph.project.id}`}>
+              <Image src={ph.src} alt={ph.alt} widths={[360, 540, 720]} sizes="(max-width: 640px) 75vw, 340px" />
+              <span class="cap">
+                <span class="cap-title">{ph.project.data.title}</span>
+                <span>{ph.caption}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="work" class="section wrap">
+    <h2 class="section-title">Selected work</h2>
+    {
+      featured.map((p, i) => (
+        <ProjectSheet project={p} index={i + 1} layout={i === 0 ? 'wide' : i % 2 === 1 ? 'flip' : 'split'} />
+      ))
+    }
+
+    {
+      other.length > 0 && (
+        <div class="other">
+          <h3 class="label">Also built</h3>
+          <ul>
+            {other.map((p) => (
+              <li>
+                <a href={`/projects/${p.id}`}>{p.data.title}</a>
+                <p>{p.data.summary}</p>
+                <span class="meta">{p.data.tools.slice(0, 3).join(', ')}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </section>
+
+  <section id="experience" class="section wrap">
+    <h2 class="section-title">Experience</h2>
+    <RoleList roles={experience} />
+    <div class="leadership">
+      <h3 class="label">Leadership</h3>
+      <RoleList roles={leadership} compact />
+    </div>
+  </section>
+
+  <section id="skills" class="section wrap">
+    <h2 class="section-title">Skills</h2>
+    <dl class="skills">
+      {
+        skills.map((g) => (
+          <div>
+            <dt class="label">{g.group}</dt>
+            <dd>{g.items.join(', ')}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <div class="edu-awards">
+      <div>
+        <h3 class="label">Education</h3>
+        {
+          education.map((e) => (
+            <div class="edu">
+              <p class="school">{e.school}</p>
+              <p>{e.degree}</p>
+              <p class="meta">{e.period}</p>
+            </div>
+          ))
+        }
+      </div>
+      <div>
+        <h3 class="label">Awards and certifications</h3>
+        <ul class="awards">
+          {
+            awards.map((a) => (
+              <li>
+                <strong>{a.title}</strong>
+                {a.detail && <span>, {a.detail}</span>}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="section wrap contact">
+    <h2 class="section-title">Contact</h2>
+    <a class="li-card" href={profile.linkedin} rel="me noopener" target="_blank">
+      <span class="li-logo"><Icon name="brand-linkedin" size={30} /></span>
+      <span class="li-text">
+        <span class="li-name">{profile.name}</span>
+        <span class="li-sub">{profile.program}</span>
+      </span>
+      <span class="li-cta">View LinkedIn profile <Icon name="arrow-up-right" size={16} /></span>
+    </a>
+    <dl class="contact-grid">
+      <div><dt class="meta">Email</dt><dd><a href={`mailto:${profile.email}`}>{profile.email}</a></dd></div>
+      <div><dt class="meta">GitHub</dt><dd><a href={profile.github}>github.com/ycouby77</a></dd></div>
+      <div><dt class="meta">Based in</dt><dd>{profile.location}</dd></div>
+    </dl>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding-block: clamp(3rem, 7vw, 5.5rem) 3rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 2.5rem 3rem;
+    align-items: center;
+  }
+  .hero-text {
+    display: grid;
+    gap: 1.25rem;
+  }
+  h1 {
+    font-size: clamp(2.6rem, 5.6vw, 4.2rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .section-title {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    margin-bottom: 2rem;
+  }
+  .intro {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 1.1rem;
+    max-width: 44ch;
+    text-wrap: pretty;
+  }
+  .hero-media {
+    margin: 0;
+  }
+  .hero-caption {
+    display: block;
+    text-decoration: none;
+  }
+  .icon-btn :global(svg) {
+    margin-left: -0.15rem;
+  }
+
+  /* Photo strip: one row that scrolls sideways, snapping to each photo. */
+  .photos {
+    border-top: 1px solid var(--line);
+    padding-block: 2.5rem;
+  }
+  .strip {
+    list-style: none;
+    margin: 0;
+    padding: 0 max(16px, calc((100% - 1120px) / 2));
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 340px);
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: max(16px, calc((100% - 1120px) / 2));
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  .strip li {
+    scroll-snap-align: start;
+  }
+  .strip a {
+    display: grid;
+    gap: 0.6rem;
+    text-decoration: none;
+  }
+  .strip :global(img) {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--img-bg);
+    border: 1px solid var(--line);
+  }
+  .cap {
+    display: grid;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .cap-title {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .strip a:hover .cap-title {
+    color: var(--accent);
+  }
+
+  .li-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    max-width: 760px;
+    margin-bottom: 2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    text-decoration: none;
+  }
+  .li-card:hover {
+    border-color: var(--accent);
+    color: inherit;
+  }
+  .li-logo {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    background: #0a66c2;
+    color: #fff;
+  }
+  .li-text {
+    display: grid;
+    gap: 0.15rem;
+  }
+  .li-name {
+    font-weight: 500;
+    font-size: 1.1rem;
+  }
+  .li-sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .li-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 0.92rem;
+  }
+  @media (max-width: 640px) {
+    .li-card {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .li-cta {
+      grid-column: 1 / -1;
+    }
+  }
+  .hero .stats {
+    grid-column: 1 / -1;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 1.5rem 0 0;
+    border-block: 1px solid var(--line-strong);
+  }
+  .stats > div {
+    padding: 0.9rem 1rem;
+    border-left: 1px solid var(--line-strong);
+  }
+  .stats > div:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .stats dd {
+    margin: 0;
+  }
+  .val {
+    font-size: 1.3rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* "Also built": plain rows, not a third card grid. */
+  .other {
+    margin-top: 3.5rem;
+  }
+  .other ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  .other li {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) minmax(0, 12rem);
+    gap: 0.4rem 2rem;
+    align-items: baseline;
+    padding-block: 1.1rem;
+  }
+  .other li > a {
+    font-weight: 500;
+    font-size: 1.05rem;
+    text-decoration: none;
+  }
+  .other p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+  .other .meta {
+    text-transform: none;
+    letter-spacing: 0;
+    text-align: right;
+  }
+
+  .leadership {
+    margin-top: 3rem;
+  }
+  .leadership .label {
+    margin-bottom: 1rem;
+  }
+
+  .skills {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 1.75rem 3rem;
+    margin: 0;
+  }
+  .skills dd {
+    margin: 0.35rem 0 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+  .edu-awards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 2rem 3rem;
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+  }
+  .edu p {
+    margin: 0.3rem 0 0;
+    color: var(--ink-2);
+  }
+  .edu .school {
+    margin-top: 0.75rem;
+    color: var(--ink);
+    font-size: 1.15rem;
+    font-weight: 500;
+  }
+  .awards {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+  .awards li {
+    padding-block: 0.3rem;
+  }
+  .awards strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+  }
+  .contact-grid dd {
+    margin: 0.25rem 0 0;
+    font-size: 1.05rem;
+  }
+  .contact-grid a {
+    display: inline-block;
+    padding-block: 0.4rem;
+  }
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 760px) {
+    .other li {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .other .meta {
+      text-align: left;
+    }
+  }
+  @media (max-width: 640px) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .stats > div:nth-child(odd) {
+      border-left: 0;
+      padding-left: 0;
+    }
+    .stats > div:nth-child(n + 3) {
+      border-top: 1px solid var(--line-strong);
+    }
+  }
+</style>

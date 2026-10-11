@@ -1,0 +1,156 @@
+---
+// A featured project on the home page, laid out like a drawing sheet.
+// layout: 'wide' = full-width image with text below (used for the lead project),
+//         'split' / 'flip' = image beside text, on the left or right.
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import TitleBlock from './TitleBlock.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  index: number;
+  layout?: 'wide' | 'split' | 'flip';
+}
+
+const { project, index, layout = 'split' } = Astro.props;
+const { data } = project;
+const num = String(index).padStart(2, '0');
+const cover = data.gallery[0];
+const href = `/projects/${project.id}`;
+---
+
+<article class={`sheet ${layout}`}>
+  <a class="media" href={href} tabindex="-1" aria-hidden="true">
+    {
+      cover && (
+        <Image
+          src={cover.src}
+          alt=""
+          widths={layout === 'wide' ? [640, 1000, 1400] : [480, 800, 1200]}
+          sizes={layout === 'wide' ? '(max-width: 1120px) 100vw, 1120px' : '(max-width: 800px) 100vw, 560px'}
+        />
+      )
+    }
+  </a>
+  <div class="body">
+    <h3><a href={href}>{data.title}</a></h3>
+    <p class="summary">{data.summary}</p>
+    <a class="more" href={href}>Read the case study<span class="visually-hidden">: {data.title}</span></a>
+  </div>
+  <div class="tb">
+    <TitleBlock cells={[{ label: 'Sheet', value: num }, { label: 'Context', value: data.context }, ...data.specs.slice(0, 2)]} />
+  </div>
+</article>
+
+<style>
+  .sheet {
+    display: grid;
+    gap: 1.5rem 2.5rem;
+    padding-block: 2.75rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .split {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-areas: 'media body' 'tb tb';
+  }
+  .flip {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    grid-template-areas: 'body media' 'tb tb';
+  }
+  .wide {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'media' 'tb' 'body';
+    padding-top: 0;
+  }
+  .media {
+    grid-area: media;
+    background: var(--img-bg);
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .wide .media {
+    aspect-ratio: 21 / 9;
+    border-bottom: 0;
+  }
+  .media :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .wide .tb {
+    margin-top: -1.5rem;
+  }
+  .body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+    align-self: center;
+  }
+  .wide .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: 1rem 3rem;
+    align-items: start;
+  }
+  .wide .more {
+    grid-column: 2;
+  }
+  h3 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    text-wrap: balance;
+  }
+  h3 a {
+    text-decoration: none;
+  }
+  .summary {
+    margin: 0;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+  .more {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--accent);
+    text-underline-offset: 4px;
+  }
+  .more::after {
+    content: ' \2192';
+  }
+  .tb {
+    grid-area: tb;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .media :global(img) {
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sheet:hover .media :global(img) {
+      transform: scale(1.02);
+    }
+  }
+  @media (max-width: 800px) {
+    .split,
+    .flip,
+    .wide {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'media' 'tb' 'body';
+    }
+    .media,
+    .wide .media {
+      aspect-ratio: 4 / 3;
+      border-bottom: 0;
+    }
+    .tb,
+    .wide .tb {
+      margin-top: -1.5rem;
+    }
+    .wide .body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .wide .more {
+      grid-column: auto;
+    }
+  }
+</style>

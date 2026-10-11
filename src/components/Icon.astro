@@ -1,0 +1,23 @@
+---
+// Inline Tabler icon (outline set), resolved at build time; no runtime JS.
+import brandLinkedin from '@tabler/icons/outline/brand-linkedin.svg?raw';
+import download from '@tabler/icons/outline/download.svg?raw';
+import mail from '@tabler/icons/outline/mail.svg?raw';
+import arrowUpRight from '@tabler/icons/outline/arrow-up-right.svg?raw';
+import rotate360 from '@tabler/icons/outline/rotate-360.svg?raw';
+
+const icons = { 'brand-linkedin': brandLinkedin, download, mail, 'arrow-up-right': arrowUpRight, 'rotate-360': rotate360 };
+
+interface Props {
+  name: keyof typeof icons;
+  size?: number;
+}
+const { name, size = 18 } = Astro.props;
+// Decorative: every icon sits next to visible text or inside a labelled control.
+const svg = icons[name]
+  .replace(/\s(width|height)="24"/g, ` $1="${size}"`)
+  .replace('<svg', '<svg aria-hidden="true" focusable="false" stroke-width="1.75"')
+  .replace(/\sstroke-width="2"/, '');
+---
+
+<Fragment set:html={svg} />

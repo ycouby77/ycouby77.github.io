@@ -1,0 +1,104 @@
+---
+import type { Role } from '../data/profile';
+
+interface Props {
+  roles: Role[];
+  // Compact rows: title, org and dates on one line plus the first point only.
+  compact?: boolean;
+}
+const { roles, compact = false } = Astro.props;
+---
+
+<ol class:list={['roles', { compact }]}>
+  {
+    roles.map((r) => (
+      <li class="role">
+        <div class="when meta">{r.period}</div>
+        <div>
+          <h3>{r.title}</h3>
+          <p class="org">{r.org}</p>
+          {compact ? (
+            <p class="point">{r.points[0]}</p>
+          ) : (
+            <ul>
+              {r.points.map((p) => (
+                <li>{p}</li>
+              ))}
+            </ul>
+          )}
+          {r.project && (
+            <a class="case" href={`/projects/${r.project}`}>
+              Read the case study
+            </a>
+          )}
+        </div>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .roles {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .role {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 1.5rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  .role:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .when {
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+  h3 {
+    font-size: 1.3rem;
+  }
+  .compact h3 {
+    font-size: 1.05rem;
+  }
+  .compact .role {
+    padding-block: 1rem;
+  }
+  .org {
+    margin: 0.25rem 0 0.5rem;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--ink-2);
+  }
+  li::marker {
+    color: var(--accent);
+  }
+  .point {
+    margin: 0;
+    color: var(--ink-2);
+  }
+  .case {
+    display: inline-block;
+    margin-top: 0.6rem;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--accent);
+    text-underline-offset: 4px;
+  }
+  .case::after {
+    content: ' \2192';
+  }
+  @media (max-width: 640px) {
+    .role {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.4rem;
+    }
+  }
+</style>

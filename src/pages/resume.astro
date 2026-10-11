@@ -1,0 +1,76 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { profile } from '../data/profile';
+import page1 from '../assets/resume/page-1.png';
+import page2 from '../assets/resume/page-2.png';
+
+// Page images are rendered from the PDF (200 dpi) so the resume reads the same on
+// every device; phones often can't show an embedded PDF inline.
+const pages = [
+  { src: page1, alt: 'Resume page 1: contact details, education at Western University, and experience at the ARM Lab, Western Engineering Autopilot, and Western Formula Racing, plus leadership roles.' },
+  { src: page2, alt: 'Resume page 2: projects, skills, and awards and certifications.' },
+];
+const fileName = profile.resumePdf.split('/').pop();
+---
+
+<Base title="Resume" description={`Resume of ${profile.name}, ${profile.program}.`}>
+  <section class="wrap resume">
+    <header class="head">
+      <h1>Resume</h1>
+      <div class="actions">
+        <a class="btn btn-primary" href={profile.resumePdf} download={fileName}><Icon name="download" /> Download PDF</a>
+        <a class="btn" href={profile.resumePdf} target="_blank" rel="noopener">Open in new tab</a>
+      </div>
+    </header>
+    <div class="pages">
+      {
+        pages.map((p, i) => (
+          <figure class="page">
+            <Image src={p.src} alt={p.alt} widths={[700, 1100, 1700]} sizes="(max-width: 900px) 100vw, 850px" loading={i === 0 ? 'eager' : 'lazy'} />
+          </figure>
+        ))
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .resume {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem);
+  }
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem 2rem;
+    max-width: 850px;
+    margin: 0 auto 2rem;
+  }
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .pages {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 850px;
+    margin: 0 auto;
+  }
+  .page {
+    margin: 0;
+    background: #fff;
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.8);
+  }
+  .page :global(img) {
+    width: 100%;
+    height: auto;
+  }
+</style>

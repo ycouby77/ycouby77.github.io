@@ -1,0 +1,349 @@
+---
+// Interactive 3D viewer for project CAD. three.js is only downloaded once the
+// viewer scrolls near the screen, so pages without one (or visitors who never
+// scroll to it) pay nothing.
+interface Props {
+  title: string;
+  // Bare: just the canvas (no header, part picker or caption), for embedding in a hero.
+  bare?: boolean;
+  note?: string;
+  models: { label: string; src: string; caption?: string; rotation?: [number, number, number]; finish?: 'original' | 'plastic' }[];
+}
+const { title, note, models, bare = false } = Astro.props;
+---
+
+<section class:list={['viewer', { bare }]} aria-label={title} data-viewer data-models={JSON.stringify(models)}>
+  {
+    !bare && (
+      <div class="viewer-head">
+        <h2 class="label">{title}</h2>
+        <p class="hint">Drag to orbit. Click, then scroll to zoom.</p>
+      </div>
+    )
+  }
+  <div class="stage">
+    <slot name="poster" />
+    <canvas role="img" tabindex="0" aria-label={`3D model: ${models[0].label}. Drag to rotate; arrow keys pan.`}></canvas>
+    <p class="status meta" aria-live="polite">Loading 3D viewer…</p>
+  </div>
+  <div class="bar" hidden={bare}>
+    {
+      models.length > 1 && (
+        <div class="parts" role="group" aria-label="Choose a part">
+          {models.map((m, i) => (
+            <button type="button" data-index={i} aria-pressed={i === 0 ? 'true' : 'false'}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )
+    }
+    <p class="caption">{models[0].caption ?? ''}</p>
+  </div>
+  {note && !bare && <p class="note">{note}</p>}
+</section>
+
+<script>
+  import type { Mesh, Object3D } from 'three';
+
+  type ModelSpec = { label: string; src: string; caption?: string; rotation?: [number, number, number]; finish?: 'original' | 'plastic' };
+
+  async function mount(root: HTMLElement) {
+    const models: ModelSpec[] = JSON.parse(root.dataset.models ?? '[]');
+    const canvas = root.querySelector('canvas')!;
+    const stage = root.querySelector<HTMLElement>('.stage')!;
+    const status = root.querySelector<HTMLElement>('.status')!;
+    const caption = root.querySelector<HTMLElement>('.caption')!;
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('.parts button')];
+
+    const THREE = await import('three');
+    const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
+    const { STLLoader } = await import('three/examples/jsm/loaders/STLLoader.js');
+    const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+    // Models are meshopt-compressed by `npm run model:optimize`.
+    const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
+    const { toCreasedNormals } = await import('three/examples/jsm/utils/BufferGeometryUtils.js');
+    // CAD look: smooth shading on curved faces, hard edges where faces meet at > 30 degrees.
+    const CREASE = THREE.MathUtils.degToRad(30);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 10000);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2c30, 1.6));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    key.position.set(1, 1.4, 1.2);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0xdfe6ff, 0.8);
+    rim.position.set(-1.2, 0.4, -1);
+    scene.add(rim);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.listenToKeyEvents(canvas);
+    // Wheel zoom only while the viewer is "engaged", so scrolling past it never gets hijacked.
+    controls.enableZoom = false;
+    canvas.addEventListener('pointerdown', () => (controls.enableZoom = true));
+    canvas.addEventListener('pointerleave', () => (controls.enableZoom = false));
+    canvas.addEventListener('blur', () => (controls.enableZoom = false));
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    controls.autoRotate = !reduceMotion;
+    controls.autoRotateSpeed = 1.2;
+    canvas.addEventListener('pointerdown', () => (controls.autoRotate = false), { once: true });
+
+    // Printed parts read as matte plastic; GLB files keep their own materials.
+    const plastic = new THREE.MeshStandardMaterial({ color: 0xd9dadc, roughness: 0.55, metalness: 0.05 });
+    const css = getComputedStyle(document.documentElement);
+    const token = (name: string) => new THREE.Color(css.getPropertyValue(name).trim() || '#333');
+    const grid = new THREE.GridHelper(1, 20, token('--line-strong'), token('--line'));
+    scene.add(grid);
+
+    let current: Object3D | null = null;
+    const cache = new Map<string, Object3D>();
+
+    async function load(spec: ModelSpec): Promise<Object3D> {
+      const hit = cache.get(spec.src);
+      if (hit) return hit;
+      let obj: Object3D;
+      if (/\.stl$/i.test(spec.src)) {
+        const geo = await new STLLoader().loadAsync(spec.src);
+        obj = new THREE.Mesh(toCreasedNormals(geo, CREASE), plastic);
+        // SolidWorks exports Y-up already; STLs from other tools may need rotating here.
+      } else {
+        obj = (await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(spec.src)).scene;
+        if (spec.finish === 'plastic') {
+          obj.traverse((o) => {
+            const mesh = o as Mesh;
+            if (!mesh.isMesh) return;
+            // Converted CAD exports often ship without normals (renders solid black);
+            // rebuild them with creases so sharp edges stay sharp.
+            mesh.geometry = toCreasedNormals(mesh.geometry, CREASE);
+            mesh.material = plastic;
+          });
+        }
+      }
+      if (spec.rotation) {
+        // Wrap so frame() can freely reposition the outer group.
+        const [rx, ry, rz] = spec.rotation.map((d) => THREE.MathUtils.degToRad(d));
+        obj.rotation.set(rx, ry, rz);
+        const group = new THREE.Group();
+        group.add(obj);
+        obj = group;
+      }
+      cache.set(spec.src, obj);
+      return obj;
+    }
+
+    function frame(obj: Object3D) {
+      obj.position.set(0, 0, 0);
+      obj.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      // Sit the model on the grid, centred.
+      obj.position.set(-center.x, -box.min.y, -center.z);
+      const radius = size.length() / 2 || 1;
+      grid.scale.setScalar(radius * 4);
+      const dist = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2));
+      camera.near = dist / 100;
+      camera.far = dist * 100;
+      // Three-quarter view from slightly above, close enough that the model fills the frame.
+      camera.position.set(dist * 0.58, dist * 0.4, dist * 0.58);
+      camera.updateProjectionMatrix();
+      controls.target.set(0, size.y / 2, 0);
+      controls.update();
+    }
+
+    async function show(i: number) {
+      const spec = models[i];
+      status.textContent = `Loading ${spec.label}…`;
+      status.hidden = false;
+      buttons.forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
+      try {
+        const obj = await load(spec);
+        if (current) scene.remove(current);
+        current = obj;
+        scene.add(obj);
+        frame(obj);
+        canvas.setAttribute('aria-label', `3D model: ${spec.label}. Drag to rotate; arrow keys pan.`);
+        caption.textContent = spec.caption ?? '';
+        status.hidden = true;
+        root.dataset.loaded = 'true';
+      } catch {
+        status.textContent = `Couldn't load ${spec.label}.`;
+      }
+    }
+
+    function resize() {
+      const { width, height } = stage.getBoundingClientRect();
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(stage);
+    resize();
+
+    // Only render while the viewer is on screen.
+    let visible = true;
+    new IntersectionObserver(([e]) => (visible = e.isIntersecting)).observe(root);
+    renderer.setAnimationLoop(() => {
+      if (!visible) return;
+      controls.update();
+      renderer.render(scene, camera);
+    });
+
+    buttons.forEach((b) => b.addEventListener('click', () => show(Number(b.dataset.index))));
+    await show(0);
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-viewer]')) {
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        io.disconnect();
+        mount(root).catch((err) => {
+          console.error('3D viewer failed to start', err);
+          const s = root.querySelector<HTMLElement>('.status');
+          if (s) s.textContent = "Couldn't start the 3D viewer.";
+        });
+      },
+      { rootMargin: '300px' },
+    );
+    io.observe(root);
+  }
+</script>
+
+<style>
+  .viewer {
+    margin-top: 3rem;
+    border: 1px solid var(--line-strong);
+    border-top: 2px solid var(--accent);
+    background: var(--surface);
+  }
+  .viewer.bare {
+    margin: 0;
+    border: 0;
+    background: transparent;
+  }
+  .bare .stage {
+    aspect-ratio: 4 / 3;
+    background: radial-gradient(ellipse at 50% 60%, var(--surface) 0%, transparent 70%);
+  }
+  .bare .status {
+    display: none;
+  }
+  /* Poster image shown until the model is ready. */
+  .stage > :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.5;
+    transition: opacity 0.4s ease;
+  }
+  [data-loaded] .stage > :global(img) {
+    opacity: 0;
+  }
+  .bar[hidden] {
+    display: none;
+  }
+  .viewer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .viewer-head > * {
+    margin: 0;
+  }
+  .hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    min-height: 280px;
+    background: radial-gradient(ellipse at 50% 35%, var(--surface) 0%, var(--bg) 75%);
+    cursor: grab;
+    /* Vertical swipes scroll the page; horizontal drags and pinches go to the viewer. */
+    touch-action: pan-y;
+  }
+  .stage:active {
+    cursor: grabbing;
+  }
+  canvas {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .status {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    pointer-events: none;
+  }
+  .status[hidden] {
+    display: none;
+  }
+  .bar {
+    border-top: 1px solid var(--line-strong);
+    padding: 0.75rem 1rem;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .parts button {
+    font: 500 0.7rem/1 var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    min-height: 36px;
+    padding: 0.45rem 0.7rem;
+    cursor: pointer;
+  }
+  .parts button:hover {
+    color: var(--ink);
+    border-color: var(--muted);
+  }
+  .parts button[aria-pressed='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .caption {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.9rem;
+    min-height: 1.4em;
+  }
+  .note {
+    margin: 0;
+    padding: 0 1rem 0.75rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  @media (max-width: 640px) {
+    .stage {
+      aspect-ratio: 1 / 1;
+    }
+    .hint {
+      display: none;
+    }
+  }
+</style>

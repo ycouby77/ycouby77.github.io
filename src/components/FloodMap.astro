@@ -1,0 +1,348 @@
+---
+// Interactive flood simulator: click the map to flood an area, drag the radius,
+// and the replacement shuttle is rerouted live (logic in src/lib/floodsim.ts).
+// Leaflet and the street data load only when the map scrolls into view.
+import 'leaflet/dist/leaflet.css';
+
+interface Props {
+  src: string; // JSON from `python -m floodsim.export_web`
+}
+const { src } = Astro.props;
+
+const presets = [
+  { label: 'King & Bathurst', lat: 43.644, lon: -79.4026, radius: 200 },
+  { label: 'King & Spadina', lat: 43.6455, lon: -79.3943, radius: 150 },
+  { label: 'King & Yonge', lat: 43.6492, lon: -79.3773, radius: 150 },
+  { label: 'Don River crossing', lat: 43.6575, lon: -79.3545, radius: 200 },
+];
+---
+
+<section class="flood" data-flood data-src={src} data-presets={JSON.stringify(presets)} aria-label="Interactive flood simulation">
+  <div class="controls">
+    <div class="presets" role="group" aria-label="Flood scenarios">
+      {presets.map((p, i) => <button type="button" data-preset={i}>{p.label}</button>)}
+      <button type="button" data-clear class="ghost">Clear</button>
+    </div>
+    <label class="radius">
+      <span>Flood radius <output data-radius-out>200 m</output></span>
+      <input type="range" min="50" max="400" step="10" value="200" data-radius />
+    </label>
+  </div>
+
+  <div class="stage">
+    <div class="map" data-map></div>
+    <p class="status" data-status>Loading map…</p>
+  </div>
+
+  <dl class="stats" aria-live="polite">
+    <div><dt>Normal route</dt><dd data-stat="base">–</dd></div>
+    <div><dt>During flood</dt><dd data-stat="flooded">–</dd></div>
+    <div><dt>Extra distance</dt><dd data-stat="extra">–</dd></div>
+    <div><dt>Roads cut</dt><dd data-stat="cut">–</dd></div>
+  </dl>
+  <p class="detail" data-detail>Click anywhere on the map, or pick a scenario, to flood that area.</p>
+  <p class="legend">
+    <span class="k base"></span>Normal route
+    <span class="k detour"></span>Shuttle during flood
+    <span class="k cut"></span>Flooded roads
+    <span class="k zone"></span>Flood zone
+  </p>
+</section>
+
+<script>
+  import type { Flood, FloodData } from '../lib/floodsim';
+
+  async function mount(root: HTMLElement) {
+    const status = root.querySelector<HTMLElement>('[data-status]')!;
+    const [L, fs, data] = await Promise.all([
+      import('leaflet'),
+      import('../lib/floodsim'),
+      fetch(root.dataset.src!).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<FloodData>;
+      }),
+    ]);
+    const sim = fs.prepare(data);
+    const base = fs.baseline(sim);
+    const presets: (Flood & { label: string })[] = JSON.parse(root.dataset.presets!);
+
+    const css = getComputedStyle(document.documentElement);
+    const color = (v: string) => css.getPropertyValue(v).trim();
+    const ACCENT = color('--accent');
+
+    const map = L.map(root.querySelector<HTMLElement>('[data-map]')!, { zoomControl: true, scrollWheelZoom: false, attributionControl: true });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+    // Wheel zoom only after the visitor clicks into the map.
+    map.on('focus click', () => map.scrollWheelZoom.enable());
+    map.on('blur mouseout', () => map.scrollWheelZoom.disable());
+
+    const baseLine = L.polyline(fs.edgesToLatLngs(sim, base.flatMap((l) => l.edges ?? [])), { color: '#9aa0a6', weight: 5, opacity: 0.7 }).addTo(map);
+    map.fitBounds(baseLine.getBounds(), { padding: [20, 20] });
+
+    const layer = L.layerGroup().addTo(map);
+    const stopLayer = L.layerGroup().addTo(map);
+    const radiusInput = root.querySelector<HTMLInputElement>('[data-radius]')!;
+    const radiusOut = root.querySelector<HTMLOutputElement>('[data-radius-out]')!;
+    const detail = root.querySelector<HTMLElement>('[data-detail]')!;
+    const stat = (k: string, v: string) => (root.querySelector<HTMLElement>(`[data-stat="${k}"]`)!.textContent = v);
+    const km = (m: number) => `${(m / 1000).toFixed(2)} km`;
+
+    let flood: Flood | null = null;
+
+    function drawStops(closed: Set<number>) {
+      stopLayer.clearLayers();
+      data.stops.forEach((s, i) =>
+        L.circleMarker([s.lat, s.lon], {
+          radius: closed.has(i) ? 6 : 4,
+          color: closed.has(i) ? '#e03131' : '#1c1e22',
+          weight: 2,
+          fillColor: closed.has(i) ? '#e03131' : '#ffffff',
+          fillOpacity: 1,
+        })
+          .bindTooltip(`${s.name}${closed.has(i) ? ' (closed)' : ''}`)
+          .addTo(stopLayer),
+      );
+    }
+
+    function render() {
+      layer.clearLayers();
+      if (!flood) {
+        drawStops(new Set());
+        stat('base', km(base.reduce((s, l) => s + l.length, 0)));
+        stat('flooded', '–');
+        stat('extra', '–');
+        stat('cut', '–');
+        detail.textContent = 'Click anywhere on the map, or pick a scenario, to flood that area.';
+        return;
+      }
+      const r = fs.simulate(sim, flood, base);
+      L.circle([flood.lat, flood.lon], { radius: flood.radius, color: '#4c8dff', weight: 1, fillOpacity: 0.22 }).addTo(layer);
+      const cutLines = [...r.cut].map((e) => fs.edgesToLatLngs(sim, [e]));
+      if (cutLines.length) L.polyline(cutLines, { color: '#e03131', weight: 3 }).addTo(layer);
+      const detourEdges = r.flooded.flatMap((l) => l.edges ?? []);
+      L.polyline(fs.edgesToLatLngs(sim, detourEdges), { color: ACCENT, weight: 4 }).addTo(layer);
+      drawStops(r.closed);
+
+      const extra = r.diversions.reduce((s, d) => s + (d.detour === null ? 0 : d.detour - d.normal), 0);
+      const blocked = r.diversions.filter((d) => d.detour === null);
+      stat('base', km(r.baselineLength));
+      stat('flooded', km(r.floodedLength));
+      stat('extra', blocked.length ? 'No path' : `${extra >= 0 ? '+' : ''}${Math.round(extra)} m`);
+      stat('cut', String(r.cut.size));
+
+      const closedNames = [...r.closed].map((i) => data.stops[i].name);
+      if (!r.cut.size && !r.closed.size) {
+        detail.textContent = 'This flood misses the route: no roads it uses are cut.';
+      } else if (blocked.length) {
+        const d = blocked[0];
+        detail.textContent = `No drivable path from ${data.stops[d.from].name} to ${data.stops[d.to].name}: the flood cuts every way around.`;
+      } else {
+        const parts = [`${r.cut.size} road segment${r.cut.size === 1 ? '' : 's'} flooded`];
+        if (closedNames.length) parts.push(`${closedNames.length} stop${closedNames.length === 1 ? '' : 's'} closed (${closedNames.join(', ')})`);
+        detail.textContent = `${parts.join('; ')}.`;
+      }
+    }
+
+    function setFlood(f: Flood | null) {
+      flood = f;
+      if (f) {
+        radiusInput.value = String(f.radius);
+        radiusOut.value = `${f.radius} m`;
+      }
+      render();
+    }
+
+    map.on('click', (e: L.LeafletMouseEvent) => setFlood({ lat: e.latlng.lat, lon: e.latlng.lng, radius: Number(radiusInput.value) }));
+    radiusInput.addEventListener('input', () => {
+      radiusOut.value = `${radiusInput.value} m`;
+      if (flood) setFlood({ ...flood, radius: Number(radiusInput.value) });
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const p = presets[Number(b.dataset.preset)];
+        setFlood({ lat: p.lat, lon: p.lon, radius: p.radius });
+        map.setView([p.lat, p.lon], 15);
+      }),
+    );
+    root.querySelector('[data-clear]')!.addEventListener('click', () => {
+      setFlood(null);
+      map.fitBounds(baseLine.getBounds(), { padding: [20, 20] });
+    });
+
+    status.hidden = true;
+    setFlood({ ...presets[0] });
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-flood]')) {
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        io.disconnect();
+        mount(root).catch((err) => {
+          console.error('Flood map failed to start', err);
+          root.querySelector<HTMLElement>('[data-status]')!.textContent = "Couldn't load the map.";
+        });
+      },
+      { rootMargin: '300px' },
+    );
+    io.observe(root);
+  }
+</script>
+
+<style>
+  .flood {
+    margin-top: 3rem;
+    border: 1px solid var(--line-strong);
+    border-top: 2px solid var(--accent);
+    background: var(--surface);
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem 1.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  button {
+    min-height: 36px;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink-2);
+    font: 500 0.85rem/1 var(--font-body);
+    cursor: pointer;
+  }
+  button:hover {
+    color: var(--ink);
+    border-color: var(--muted);
+  }
+  .ghost {
+    border-color: transparent;
+    color: var(--muted);
+  }
+  .radius {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 200px;
+    font-size: 0.85rem;
+    color: var(--ink-2);
+  }
+  .radius output {
+    color: var(--ink);
+    font-family: var(--font-mono);
+    margin-left: 0.4rem;
+  }
+  input[type='range'] {
+    accent-color: var(--accent);
+    width: 100%;
+  }
+  .stage {
+    position: relative;
+  }
+  .map {
+    height: clamp(360px, 60vh, 560px);
+    background: #1a1c20;
+  }
+  /* Dark basemap: invert the standard OSM tiles so the map sits in the page theme. */
+  .map :global(.leaflet-tile-pane) {
+    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
+  }
+  .map :global(.leaflet-control-attribution) {
+    background: rgb(15 17 20 / 0.8);
+    color: var(--muted);
+  }
+  .map :global(.leaflet-control-attribution a) {
+    color: var(--ink-2);
+  }
+  .status {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .status[hidden] {
+    display: none;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  .stats > div {
+    padding: 0.75rem 1rem;
+    border-left: 1px solid var(--line-strong);
+  }
+  .stats > div:first-child {
+    border-left: 0;
+  }
+  .stats dt {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .stats dd {
+    margin: 0.15rem 0 0;
+    font: 500 1.15rem/1.3 var(--font-mono);
+  }
+  .detail {
+    margin: 0;
+    padding: 0.75rem 1rem 0;
+    color: var(--ink-2);
+    font-size: 0.92rem;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 1rem;
+    margin: 0;
+    padding: 0.6rem 1rem 0.9rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .k {
+    display: inline-block;
+    width: 18px;
+    height: 4px;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+  }
+  .k.base {
+    background: #9aa0a6;
+  }
+  .k.detour {
+    background: var(--accent);
+  }
+  .k.cut {
+    background: #e03131;
+  }
+  .k.zone {
+    height: 10px;
+    background: rgb(76 141 255 / 0.4);
+  }
+  @media (max-width: 640px) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .stats > div:nth-child(3) {
+      border-left: 0;
+    }
+    .stats > div:nth-child(n + 3) {
+      border-top: 1px solid var(--line-strong);
+    }
+  }
+</style>

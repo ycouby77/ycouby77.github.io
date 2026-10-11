@@ -24,7 +24,7 @@ const { items, label } = Astro.props;
       items.map((it, i) => (
         <figure class="slide" data-slide hidden={i !== 0} aria-roledescription="slide" aria-label={`${i + 1} of ${items.length}`}>
           <div class="frame">
-            <Image src={it.src} alt={it.alt} widths={[640, 1000, 1400]} sizes="(max-width: 900px) 100vw, 60vw" loading={i === 0 ? 'eager' : 'lazy'} />
+            <Image src={it.src} alt={it.alt} widths={[640, 1000, 1400, 2000]} sizes="(max-width: 900px) 100vw, 60vw" loading={i === 0 ? 'eager' : 'lazy'} quality={90} />
           </div>
           <figcaption>
             <span class="title">{it.title}</span>
@@ -96,14 +96,19 @@ const { items, label } = Astro.props;
   /* No box: the image keeps its own shape and the leftover space is just page. */
   .frame {
     height: clamp(280px, 62vh, 640px);
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
+  /* Fit inside the box, but never wider/taller than the file itself (no blurry upscaling). */
   .frame :global(img) {
+    display: block;
     width: auto;
     height: auto;
     max-width: 100%;
     max-height: 100%;
+    object-fit: contain;
   }
   figcaption {
     display: grid;

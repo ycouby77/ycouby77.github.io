@@ -47,7 +47,7 @@ const num = String(data.order).padStart(2, '0');
                 {data.galleryLayout === 'stack' ? (
                   <Image src={g.src} alt={g.alt} widths={[960, 1440, 1920]} sizes="(max-width: 1100px) 100vw, 1100px" quality={90} />
                 ) : (
-                  <Image src={g.src} alt={g.alt} widths={[400, 700, 1000]} sizes="(max-width: 800px) 100vw, 400px" />
+                  <Image src={g.src} alt={g.alt} widths={[400, 700, 1000, 1400]} sizes="(max-width: 800px) 100vw, 33vw" quality={90} />
                 )}
               </div>
               <figcaption class="meta">

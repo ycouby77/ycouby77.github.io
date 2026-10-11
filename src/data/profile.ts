@@ -62,15 +62,15 @@ export type Role = {
 
 export const experience: Role[] = [
   {
-    title: 'Research Assistant',
+    title: 'Undergraduate Researcher',
     org: 'Advanced Robotics & Mechatronics (ARM) Lab, Western University',
     period: 'May 2026 - Present',
     location: 'London, ON',
     project: 'mr-clutch-actuator',
     points: [
       'Redesigned a miniaturized planetary-gear MR clutch used as a per-joint actuator in a fully actuated multi-finger robotic hand',
-      'Traced a torsional shaft fracture and an unmanufacturable keyway to a shared root cause; resolved both with a 2 mm D-profile shaft',
-      'Produced the full SolidWorks drawing set under ISO 2768-m and ran sourcing across five manufacturing platforms',
+      'Traced a torsional shaft fracture and an unmanufacturable keyway to a shared root cause; fixed both by upsizing the shaft to 2 mm and implementing a D-profile shaft/bore coupling',
+      'Produced the 7-drawing SolidWorks manufacturing set under ISO 2768-m and sourced all 7 parts across five manufacturing platforms',
     ],
   },
   {
@@ -97,9 +97,9 @@ export const leadership: Role[] = [
   {
     title: 'Mechanical Lead, BotBrawl Combat Robot Team',
     org: 'WE First Club, Western University',
-    period: 'Sept. 2026 - Present',
+    period: 'Aug. 2026 - Present',
     location: 'London, ON',
-    points: ["Lead mechanical design for the club's BotBrawl combat robot"],
+    points: ["Lead mechanical design and build of the club's combat robot for the 2026-27 BotBrawl season, organizing the mechanical sub-team"],
   },
   {
     title: 'General Member',
@@ -107,7 +107,7 @@ export const leadership: Role[] = [
     period: 'Sept. 2025 - Apr. 2026',
     location: 'London, ON',
     project: 'humanoid-neck',
-    points: ["Designed and built the neck mechanism for Baker Bot, the club's humanoid robot; took part in the Ri3D build"],
+    points: ["Developed the neck-tilt mechanism for Baker Bot, the club's humanoid robot; took part in the Ri3D build"],
   },
 ];
 

@@ -17,7 +17,7 @@ specs:
   - { label: Drivetrain, value: Modular FWD / 4WD }
   - { label: Control, value: Arduino + PWM }
   - { label: Fabrication, value: Mostly 3D-printed }
-  - { label: Kit, value: None }
+  - { label: Budget, value: Under $200 }
 results:
   - Fully operational vehicle with custom chassis and drivetrain
   - Handles off-road terrain; electronics hold up under load
@@ -43,4 +43,4 @@ viewer:
 - Developed a modular drivetrain supporting FWD and 4WD configurations
 - Integrated Arduino control with motor drivers, DC motors, and servo steering
 - Implemented PWM motor control, steering calibration, and a serial command interface
-- Revised suspension arm lengths and steering knuckles in a second design pass
+- First test drives exposed suspension and steering problems that kept it from driving; revised the suspension arm lengths and steering knuckles to get it running

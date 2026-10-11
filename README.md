@@ -1,6 +1,6 @@
 # Portfolio
 
-Source for [ycouby77.github.io](https://ycouby77.github.io), built with [Astro](https://astro.build).
+Source for [yacoubderradji.dev](https://yacoubderradji.dev), built with [Astro](https://astro.build).
 
 ## Editing
 

@@ -38,11 +38,15 @@ const num = String(data.order).padStart(2, '0');
 
     {
       data.gallery.length > 0 && (
-        <section class="gallery" style={`--n: ${data.gallery.length}`} aria-label="Images">
+        <section class:list={['gallery', data.galleryLayout]} style={`--n: ${data.gallery.length}`} aria-label="Images">
           {data.gallery.map((g) => (
             <figure>
               <div class="frame">
-                <Image src={g.src} alt={g.alt} widths={[400, 700, 1000]} sizes="(max-width: 800px) 100vw, 400px" />
+                {data.galleryLayout === 'stack' ? (
+                  <Image src={g.src} alt={g.alt} widths={[960, 1440, 1920]} sizes="(max-width: 1100px) 100vw, 1100px" quality={90} />
+                ) : (
+                  <Image src={g.src} alt={g.alt} widths={[400, 700, 1000]} sizes="(max-width: 800px) 100vw, 400px" />
+                )}
               </div>
               <figcaption class="meta">
                 <span class="tag">{g.label}</span> · {g.caption}
@@ -145,6 +149,18 @@ const num = String(data.order).padStart(2, '0');
   }
   figure {
     margin: 0;
+  }
+  .gallery.stack {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 1100px;
+    gap: 2rem;
+  }
+  .stack .frame {
+    aspect-ratio: auto;
+    border-color: var(--line-strong);
+  }
+  .stack .frame :global(img) {
+    height: auto;
   }
   .frame {
     background: var(--img-bg);

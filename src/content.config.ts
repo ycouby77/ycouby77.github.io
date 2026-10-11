@@ -37,6 +37,8 @@ const projects = defineCollection({
           }),
         )
         .default([]),
+      // 'stack' shows images full-width at their own aspect ratio (good for UI screenshots).
+      galleryLayout: z.enum(['grid', 'stack']).default('grid'),
       // Shown under the gallery, e.g. confidentiality notes.
       galleryNote: z.string().optional(),
       links: z.array(z.object({ label: z.string(), href: z.url() })).default([]),

@@ -100,7 +100,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
               <li class:list={{ 'has-thumb': p.data.gallery.length > 0 }}>
                 {p.data.gallery[0] && (
                   <a class="other-thumb" href={`/projects/${p.id}`} tabindex="-1" aria-hidden="true">
-                    <Image src={p.data.gallery[0].src} alt="" widths={[320, 640]} sizes="240px" />
+                    <Image src={p.data.gallery[0].src} alt="" widths={[480, 960]} sizes="320px" quality={90} />
                   </a>
                 )}
                 <a href={`/projects/${p.id}`}>{p.data.title}</a>
@@ -239,7 +239,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     display: none;
   }
   .other li.has-thumb {
-    grid-template-columns: 240px minmax(0, 15rem) minmax(0, 1fr) minmax(0, 12rem);
+    grid-template-columns: 320px minmax(0, 15rem) minmax(0, 1fr) minmax(0, 12rem);
   }
   .other-thumb {
     display: block;

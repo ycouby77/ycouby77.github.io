@@ -3,13 +3,13 @@
 
 export const profile = {
   name: 'Yacoub Derradji',
-  headline: 'I design and build robotic hardware.',
+  headline: 'I design, build, and program robotic systems.',
   program: 'Mechatronic Systems Engineering · AI Systems Engineering · Western University',
   // Hero subline. Keep it under ~20 words; the longer intro is used for meta descriptions.
   tagline:
-    'Third-year mechatronics student. I design robotic hardware from first principles through CAD, prototyping, and integration.',
+    'Third-year mechatronics and AI systems engineering student. Mechanism design, embedded control, and software, from first principles to working prototypes.',
   intro:
-    'Third-year engineering student who designs and builds robotic hardware: actuators for a multi-finger robotic hand, a neck mechanism for a humanoid robot, and a vehicle platform built from scratch. I work from first principles through CAD, prototyping, and integration.',
+    'Third-year engineering student who designs, builds, and programs robotic systems: actuators for a multi-finger robotic hand, a neck mechanism for a humanoid robot, a vehicle platform built from scratch, and the simulation and software tools around them. I work from first principles through CAD, prototyping, code, and integration.',
   location: 'London, ON',
   email: 'yderradj@uwo.ca',
   linkedin: 'https://www.linkedin.com/in/yacoubderradji',

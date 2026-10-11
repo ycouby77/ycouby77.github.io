@@ -1,5 +1,5 @@
 ---
-// Engineering-drawing style title block: a bordered strip of labelled cells.
+// Spec readout: a row of small labels over larger values, like an instrument panel.
 // Used under project images and at the top of case studies.
 interface Props {
   cells: { label: string; value: string }[];
@@ -7,7 +7,7 @@ interface Props {
 const { cells } = Astro.props;
 ---
 
-<dl class="title-block" style={`--cols: ${cells.length}`}>
+<dl class="readout" style={`--cols: ${cells.length}`}>
   {
     cells.map((c) => (
       <div class="cell">
@@ -19,44 +19,42 @@ const { cells } = Astro.props;
 </dl>
 
 <style>
-  .title-block {
+  .readout {
     display: grid;
     grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
     margin: 0;
-    border: 1px solid var(--line-strong);
-    border-top: 2px solid var(--accent);
-    background: var(--bg);
-    font-family: var(--font-mono);
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line-strong);
+    font-family: var(--font-body);
   }
   .cell {
-    padding: 0.5rem 0.65rem;
-    border-left: 1px solid var(--line-strong);
+    padding-right: 1rem;
     min-width: 0;
   }
-  .cell:first-child {
-    border-left: 0;
+  .cell + .cell {
+    padding-left: 1rem;
+    border-left: 1px solid var(--line);
   }
   dt {
-    font-size: 0.65rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
     color: var(--muted);
   }
   dd {
     margin: 0.15rem 0 0;
-    font-size: 0.85rem;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
     color: var(--ink);
     overflow-wrap: anywhere;
   }
   @media (max-width: 640px) {
-    .title-block {
+    .readout {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem 0;
     }
     .cell:nth-child(odd) {
+      padding-left: 0;
       border-left: 0;
-    }
-    .cell:nth-child(n + 3) {
-      border-top: 1px solid var(--line-strong);
     }
   }
 </style>

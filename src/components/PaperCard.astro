@@ -30,6 +30,7 @@ const { title, authors, venue, year, url, note, image } = Astro.props;
 
 <style>
   .paper {
+    border-radius: var(--radius);
     display: grid;
     grid-template-columns: 160px minmax(0, 1fr);
     gap: 1.25rem;
@@ -55,7 +56,7 @@ const { title, authors, venue, year, url, note, image } = Astro.props;
     align-content: start;
   }
   .venue {
-    font: 400 0.78rem/1.4 var(--font-mono);
+    font: 400 0.78rem/1.4 var(--font-body);
     color: var(--muted);
   }
   .title {

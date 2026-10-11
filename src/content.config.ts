@@ -80,6 +80,8 @@ const projects = defineCollection({
                 rotation: z.tuple([z.number(), z.number(), z.number()]).optional(),
                 // 'plastic' replaces the file's materials (for exports that carry no colours).
                 finish: z.enum(['original', 'plastic']).default('original'),
+                // Multi-part assemblies: show an "Explode" slider that pulls the parts apart.
+                explode: z.boolean().default(false),
               }),
             )
             .min(1),

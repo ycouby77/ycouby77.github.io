@@ -28,7 +28,7 @@ gallery:
 viewer:
   title: Vehicle in 3D
   models:
-    - { label: Full assembly, src: /models/offroad-rc-vehicle/assembly.glb, finish: plastic }
+    - { label: Full assembly, src: /models/offroad-rc-vehicle/assembly.glb, finish: plastic, explode: true }
     - { label: Front chassis, src: /models/offroad-rc-vehicle/front-chassis.stl }
     - { label: Rear chassis, src: /models/offroad-rc-vehicle/rear-chassis.stl }
     - { label: Motor mount, src: /models/offroad-rc-vehicle/motor-mount.stl }

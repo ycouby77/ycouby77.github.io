@@ -1,7 +1,10 @@
 ---
-import '@fontsource-variable/geist';
-import '@fontsource-variable/geist-mono';
+import '@fontsource-variable/newsreader';
+import '@fontsource-variable/newsreader/standard-italic.css';
+import '@fontsource/ibm-plex-sans-condensed/400.css';
+import '@fontsource/ibm-plex-sans-condensed/500.css';
 import '../styles/global.css';
+import NightSky from '../components/NightSky.astro';
 import { profile } from '../data/profile';
 
 interface Props {
@@ -19,6 +22,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07121a" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -28,6 +32,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
+    <NightSky />
     <a class="skip visually-hidden" href="#main">Skip to content</a>
     <header class="site-header">
       <div class="wrap bar">
@@ -60,8 +65,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     position: sticky;
     top: 0;
     z-index: 10;
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
-    backdrop-filter: blur(8px);
+    background: rgb(7 18 26 / 0.55);
+    backdrop-filter: blur(10px) saturate(1.2);
     border-bottom: 1px solid var(--line);
   }
   .bar {
@@ -69,18 +74,18 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    min-height: 56px;
+    min-height: 60px;
   }
   .brand {
     text-decoration: none;
     color: var(--ink);
-    font-weight: 500;
+    font: 400 1.2rem/1 var(--font-display);
     letter-spacing: -0.01em;
   }
   nav {
     display: flex;
-    gap: 1.25rem;
-    font-size: 0.9rem;
+    gap: 1.5rem;
+    font-size: 0.98rem;
     margin-left: auto;
   }
   nav a {
@@ -100,16 +105,18 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     padding: 0.5rem 0.75rem;
     background: var(--accent);
     color: var(--accent-ink);
+    border-radius: var(--radius);
     z-index: 20;
   }
   .site-footer {
     border-top: 1px solid var(--line);
     padding-block: 1.5rem;
+    background: rgb(4 11 18 / 0.6);
   }
   @media (max-width: 640px) {
     nav {
       gap: 0.9rem;
-      font-size: 0.82rem;
+      font-size: 0.9rem;
     }
     nav a:nth-child(2),
     nav a:nth-child(3) {

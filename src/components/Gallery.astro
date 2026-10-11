@@ -103,6 +103,7 @@ const { items, label } = Astro.props;
   }
   /* Fit inside the box, but never wider/taller than the file itself (no blurry upscaling). */
   .frame :global(img) {
+    border-radius: var(--radius);
     display: block;
     width: auto;
     height: auto;
@@ -138,7 +139,7 @@ const { items, label } = Astro.props;
     width: 44px;
     height: 44px;
     border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
+    border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--bg) 85%, transparent);
     color: var(--ink);
     font-size: 1.1rem;

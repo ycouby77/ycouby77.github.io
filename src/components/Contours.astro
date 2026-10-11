@@ -1,0 +1,79 @@
+---
+// Faint topographic contour rings behind a section: part terrain survey, part CAD
+// isolines. Decorative; animates slowly only while on screen; static for reduced motion.
+interface Props {
+  // Peak positions as fractions of the section box.
+  peaks?: [number, number][];
+}
+const { peaks = [[0.9, 0.12], [0.06, 0.85]] } = Astro.props;
+---
+
+<canvas class="contours" aria-hidden="true" data-contours data-peaks={JSON.stringify(peaks)}></canvas>
+
+<script>
+  for (const canvas of document.querySelectorAll<HTMLCanvasElement>('[data-contours]')) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) continue;
+    const peaks: [number, number][] = JSON.parse(canvas.dataset.peaks || '[]');
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let W = 0;
+    let H = 0;
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    const draw = (t: number) => {
+      ctx.clearRect(0, 0, W, H);
+      const step = Math.max(18, Math.min(W, H) / 32);
+      peaks.forEach(([fx, fy], k) => {
+        const px = fx * W;
+        const py = fy * H;
+        for (let i = 1; i < 22; i++) {
+          const major = i % 5 === 0;
+          ctx.strokeStyle = major ? 'rgba(126, 240, 196, 0.16)' : 'rgba(126, 240, 196, 0.06)';
+          ctx.lineWidth = major ? 1.2 : 1;
+          ctx.beginPath();
+          for (let a = 0; a <= Math.PI * 2 + 0.05; a += 0.06) {
+            const wobble = Math.sin(a * 3 + t * 0.00025 + k * 2 + i * 0.35) * step * 0.35 + Math.sin(a * 5 - t * 0.0002 + i) * step * 0.18;
+            const r = i * step + wobble;
+            const x = px + r * Math.cos(a) * 1.35;
+            const y = py + r * Math.sin(a);
+            a ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+        }
+      });
+    };
+    resize();
+    new ResizeObserver(() => {
+      resize();
+      draw(performance.now());
+    }).observe(canvas);
+    if (reduce) {
+      draw(0);
+    } else {
+      let visible = false;
+      new IntersectionObserver(([e]) => (visible = e.isIntersecting), { rootMargin: '200px' }).observe(canvas);
+      const loop = (t: number) => {
+        if (visible && !document.hidden) draw(t);
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+  }
+</script>
+
+<style>
+  .contours {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+  }
+</style>

@@ -32,8 +32,8 @@ export const facts = [
 // 3D models the hero cycles through: project folder + a lighter model file
 // (keeps the landing page fast). Rotation/finish come from the project's own viewer.
 export const heroModels = [
-  { project: 'offroad-rc-vehicle', src: '/models/offroad-rc-vehicle/assembly-lite.glb' },
   { project: 'humanoid-neck', src: '/models/humanoid-neck/neck-assembly-lite.glb' },
+  { project: 'offroad-rc-vehicle', src: '/models/offroad-rc-vehicle/assembly-lite.glb' },
 ];
 
 export const education = [

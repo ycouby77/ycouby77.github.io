@@ -8,6 +8,8 @@ import TitleBlock from '../components/TitleBlock.astro';
 import ModelViewer from '../components/ModelViewer.astro';
 import Icon from '../components/Icon.astro';
 import Gallery from '../components/Gallery.astro';
+import HeroScene from '../components/HeroScene.astro';
+import Contours from '../components/Contours.astro';
 import { profile, facts, heroModels, experience, leadership, skills, awards, education } from '../data/profile';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
@@ -26,16 +28,23 @@ const heroItems = heroModels.flatMap(({ project: id, src }) => {
 const perProject = featured.map((p) =>
   p.data.gallery.map((img) => ({ src: img.src, alt: img.alt, caption: img.caption, title: p.data.title, href: `/projects/${p.id}` })),
 );
+// Headline: last two words set in italic (same words, just emphasis).
+const words = profile.headline.split(' ');
+const headLead = words.slice(0, -2).join(' ');
+const headTail = words.slice(-2).join(' ');
+
 const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.length)) }, (_, i) =>
   perProject.map((l) => l[i]).filter(Boolean),
 ).flat();
 ---
 
 <Base>
+  <div class="hero-band">
+  <HeroScene />
   <section class="hero wrap">
     <div class="hero-text">
       <p class="eyebrow">{profile.name}</p>
-      <h1>{profile.headline}</h1>
+      <h1>{headLead} <em>{headTail}</em></h1>
       <p class="intro">{profile.tagline}</p>
       <div class="cta">
         <a class="btn btn-primary" href="#work">View work</a>
@@ -65,6 +74,10 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
         </figure>
       )
     }
+  </section>
+  </div>
+
+  <section class="wrap facts">
     <dl class="stats">
       {
         facts.map((s) => (
@@ -84,10 +97,11 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   </section>
 
   <section id="work" class="section wrap">
+    <Contours peaks={[[0.95, 0.06], [0.02, 0.55], [0.9, 0.92]]} />
     <h2 class="section-title">Selected work</h2>
     {
       featured.map((p, i) => (
-        <ProjectSheet project={p} index={i + 1} layout={i === 0 ? 'wide' : i % 2 === 1 ? 'flip' : 'split'} />
+        <ProjectSheet project={p} index={i + 1} layout={i % 2 === 1 ? 'flip' : 'split'} />
       ))
     }
 
@@ -115,6 +129,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   </section>
 
   <section id="experience" class="section wrap">
+    <Contours peaks={[[0.08, 0.2]]} />
     <h2 class="section-title">Experience</h2>
     <RoleList roles={experience} />
     <div class="leadership">
@@ -192,6 +207,26 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
 </script>
 
 <style>
+  /* Full-width night scene; the forest horizon sits along its bottom edge. */
+  .hero-band {
+    position: relative;
+    min-height: calc(100svh - 61px);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+  .hero-band .hero {
+    position: relative;
+    z-index: 1;
+    padding-bottom: clamp(11rem, 31vh, 19rem);
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: #cfe9da;
+  }
+  .facts {
+    padding-block: 1.5rem 0.5rem;
+  }
   .hero {
     padding-block: clamp(3rem, 7vw, 5.5rem) 3rem;
     display: grid;
@@ -242,6 +277,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     grid-template-columns: 320px minmax(0, 15rem) minmax(0, 1fr) minmax(0, 12rem);
   }
   .other-thumb {
+    border-radius: var(--radius);
     display: block;
     aspect-ratio: 16 / 10;
     background: var(--img-bg);
@@ -257,6 +293,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   }
 
   .li-card {
+    border-radius: var(--radius);
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
@@ -308,9 +345,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
       grid-column: 1 / -1;
     }
   }
-  .hero .stats {
-    grid-column: 1 / -1;
-  }
+
   .cta {
     display: flex;
     flex-wrap: wrap;

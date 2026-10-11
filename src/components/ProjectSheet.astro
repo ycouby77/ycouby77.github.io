@@ -35,7 +35,7 @@ const href = `/projects/${project.id}`;
   <div class="body">
     <h3><a href={href}>{data.title}</a></h3>
     <p class="summary">{data.summary}</p>
-    <a class="more" href={href}>Read the case study<span class="visually-hidden">: {data.title}</span></a>
+    <a class="more" href={href}>Learn more<span class="visually-hidden">: {data.title}</span></a>
   </div>
   <div class="tb">
     <TitleBlock cells={[{ label: 'Sheet', value: num }, { label: 'Context', value: data.context }, ...data.specs.slice(0, 2)]} />

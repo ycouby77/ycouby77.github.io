@@ -7,22 +7,25 @@ import RoleList from '../components/RoleList.astro';
 import TitleBlock from '../components/TitleBlock.astro';
 import ModelViewer from '../components/ModelViewer.astro';
 import Icon from '../components/Icon.astro';
-import { profile, facts, heroProject, heroModelSrc, experience, leadership, skills, awards, education } from '../data/profile';
+import Gallery from '../components/Gallery.astro';
+import { profile, facts, heroModels, experience, leadership, skills, awards, education } from '../data/profile';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
 const other = projects.filter((p) => !p.data.featured);
-const hero = projects.find((p) => p.id === heroProject) ?? featured[0];
-const firstModel = hero?.data.viewer?.models[0];
-const heroModel = firstModel && { ...firstModel, src: heroModelSrc ?? firstModel.src };
-const heroNum = hero ? String(featured.indexOf(hero) + 1).padStart(2, '0') : '';
-
-// Photo strip: each project's first and last image (usually two different views),
-// interleaved across projects so the strip doesn't open with one project's near-duplicates.
-const perProject = featured.map((p) => {
-  const g = p.data.gallery;
-  return (g.length > 1 ? [g[0], g[g.length - 1]] : g).map((img) => ({ ...img, project: p }));
+// Hero carousel: each configured project's first 3D model, swapped for the lighter file.
+const heroItems = heroModels.flatMap(({ project: id, src }) => {
+  const project = projects.find((p) => p.id === id);
+  const model = project?.data.viewer?.models[0];
+  if (!project || !model) return [];
+  return [{ project, model: { ...model, label: project.data.title, src }, num: String(featured.indexOf(project) + 1).padStart(2, '0') }];
 });
+
+// Photo gallery: every featured project's images, interleaved across projects so
+// consecutive photos come from different builds.
+const perProject = featured.map((p) =>
+  p.data.gallery.map((img) => ({ src: img.src, alt: img.alt, caption: img.caption, title: p.data.title, href: `/projects/${p.id}` })),
+);
 const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.length)) }, (_, i) =>
   perProject.map((l) => l[i]).filter(Boolean),
 ).flat();
@@ -43,19 +46,21 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
       </div>
     </div>
     {
-      hero && heroModel && (
-        <figure class="hero-media">
-          <ModelViewer title={`${hero.data.title}, 3D model`} models={[heroModel]} bare />
+      heroItems.length > 0 && (
+        <figure class="hero-media" data-hero-media>
+          <ModelViewer title="Featured builds in 3D" models={heroItems.map((h) => h.model)} bare cycle={9} />
           <figcaption>
-            <a href={`/projects/${hero.id}`} class="hero-caption">
-              <TitleBlock
-                cells={[
-                  { label: 'Sheet', value: heroNum },
-                  { label: 'Project', value: hero.data.title },
-                  { label: 'Model', value: 'Live 3D: drag to rotate' },
-                ]}
-              />
-            </a>
+            {heroItems.map((h, i) => (
+              <a href={`/projects/${h.project.id}`} class="hero-caption" data-hero-caption hidden={i !== 0}>
+                <TitleBlock
+                  cells={[
+                    { label: 'Sheet', value: h.num },
+                    { label: 'Project', value: h.project.data.title },
+                    { label: 'Model', value: 'Live 3D: drag to rotate' },
+                  ]}
+                />
+              </a>
+            ))}
           </figcaption>
         </figure>
       )
@@ -73,23 +78,9 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     </dl>
   </section>
 
-  <section class="photos" aria-labelledby="photos-title">
+  <section class="photos wrap" aria-labelledby="photos-title">
     <h2 id="photos-title" class="visually-hidden">Build photos</h2>
-    <ul class="strip">
-      {
-        photos.map((ph) => (
-          <li>
-            <a href={`/projects/${ph.project.id}`}>
-              <Image src={ph.src} alt={ph.alt} widths={[360, 540, 720]} sizes="(max-width: 640px) 75vw, 340px" />
-              <span class="cap">
-                <span class="cap-title">{ph.project.data.title}</span>
-                <span>{ph.caption}</span>
-              </span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    <Gallery items={photos} label="Build photos" />
   </section>
 
   <section id="work" class="section wrap">
@@ -106,7 +97,12 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
           <h3 class="label">Also built</h3>
           <ul>
             {other.map((p) => (
-              <li>
+              <li class:list={{ 'has-thumb': p.data.gallery.length > 0 }}>
+                {p.data.gallery[0] && (
+                  <a class="other-thumb" href={`/projects/${p.id}`} tabindex="-1" aria-hidden="true">
+                    <Image src={p.data.gallery[0].src} alt="" widths={[320, 640]} sizes="240px" />
+                  </a>
+                )}
                 <a href={`/projects/${p.id}`}>{p.data.title}</a>
                 <p>{p.data.summary}</p>
                 <span class="meta">{p.data.tools.slice(0, 3).join(', ')}</span>
@@ -186,6 +182,15 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   </section>
 </Base>
 
+<script>
+  // Keep the hero's title block in step with the 3D model on screen.
+  const media = document.querySelector('[data-hero-media]');
+  media?.addEventListener('viewerchange', (e) => {
+    const i = (e as CustomEvent<{ index: number }>).detail.index;
+    media.querySelectorAll<HTMLElement>('[data-hero-caption]').forEach((c, j) => (c.hidden = j !== i));
+  });
+</script>
+
 <style>
   .hero {
     padding-block: clamp(3rem, 7vw, 5.5rem) 3rem;
@@ -226,51 +231,29 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     margin-left: -0.15rem;
   }
 
-  /* Photo strip: one row that scrolls sideways, snapping to each photo. */
   .photos {
-    border-top: 1px solid var(--line);
     padding-block: 2.5rem;
+    border-top: 1px solid var(--line);
   }
-  .strip {
-    list-style: none;
-    margin: 0;
-    padding: 0 max(16px, calc((100% - 1120px) / 2));
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(260px, 340px);
-    gap: 1rem;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: max(16px, calc((100% - 1120px) / 2));
-    scrollbar-width: thin;
-    scrollbar-color: var(--line-strong) transparent;
+  [data-hero-caption][hidden] {
+    display: none;
   }
-  .strip li {
-    scroll-snap-align: start;
+  .other li.has-thumb {
+    grid-template-columns: 240px minmax(0, 15rem) minmax(0, 1fr) minmax(0, 12rem);
   }
-  .strip a {
-    display: grid;
-    gap: 0.6rem;
-    text-decoration: none;
-  }
-  .strip :global(img) {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
+  .other-thumb {
+    display: block;
+    aspect-ratio: 16 / 10;
     background: var(--img-bg);
     border: 1px solid var(--line);
+    overflow: hidden;
+    align-self: center;
   }
-  .cap {
-    display: grid;
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-  .cap-title {
-    color: var(--ink);
-    font-weight: 500;
-  }
-  .strip a:hover .cap-title {
-    color: var(--accent);
+  .other-thumb :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
   }
 
   .li-card {
@@ -463,9 +446,26 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
       grid-template-columns: minmax(0, 1fr);
     }
   }
+  @media (max-width: 1000px) {
+    .other li.has-thumb {
+      grid-template-columns: 200px minmax(0, 1fr);
+    }
+    .other li.has-thumb > :not(.other-thumb) {
+      grid-column: 2;
+    }
+    .other li.has-thumb .other-thumb {
+      grid-row: span 3;
+    }
+  }
   @media (max-width: 760px) {
-    .other li {
+    .other li,
+    .other li.has-thumb {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .other li.has-thumb > :not(.other-thumb),
+    .other li.has-thumb .other-thumb {
+      grid-column: auto;
+      grid-row: auto;
     }
     .other .meta {
       text-align: left;

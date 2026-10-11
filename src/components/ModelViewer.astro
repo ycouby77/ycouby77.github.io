@@ -6,13 +6,15 @@ interface Props {
   title: string;
   // Bare: just the canvas (no header, part picker or caption), for embedding in a hero.
   bare?: boolean;
+  // Bare + several models: auto-advance every N seconds (0 = never). Arrows are always shown.
+  cycle?: number;
   note?: string;
   models: { label: string; src: string; caption?: string; rotation?: [number, number, number]; finish?: 'original' | 'plastic' }[];
 }
-const { title, note, models, bare = false } = Astro.props;
+const { title, note, models, bare = false, cycle = 0 } = Astro.props;
 ---
 
-<section class:list={['viewer', { bare }]} aria-label={title} data-viewer data-models={JSON.stringify(models)}>
+<section class:list={['viewer', { bare }]} aria-label={title} data-viewer data-models={JSON.stringify(models)} data-cycle={cycle}>
   {
     !bare && (
       <div class="viewer-head">
@@ -25,6 +27,14 @@ const { title, note, models, bare = false } = Astro.props;
     <slot name="poster" />
     <canvas role="img" tabindex="0" aria-label={`3D model: ${models[0].label}. Drag to rotate; arrow keys pan.`}></canvas>
     <p class="status meta" aria-live="polite">Loading 3D viewer…</p>
+    {
+      bare && models.length > 1 && (
+        <div class="nav">
+          <button type="button" class="nav-btn" data-step="-1" aria-label="Previous model">&larr;</button>
+          <button type="button" class="nav-btn" data-step="1" aria-label="Next model">&rarr;</button>
+        </div>
+      )
+    }
   </div>
   <div class="bar" hidden={bare}>
     {
@@ -156,8 +166,11 @@ const { title, note, models, bare = false } = Astro.props;
       controls.update();
     }
 
+    let index = 0;
     async function show(i: number) {
+      index = i;
       const spec = models[i];
+      root.dispatchEvent(new CustomEvent('viewerchange', { detail: { index: i }, bubbles: true }));
       status.textContent = `Loading ${spec.label}…`;
       status.hidden = false;
       buttons.forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
@@ -195,7 +208,31 @@ const { title, note, models, bare = false } = Astro.props;
     });
 
     buttons.forEach((b) => b.addEventListener('click', () => show(Number(b.dataset.index))));
+
+    // Hero carousel: arrows plus optional auto-advance. Any manual interaction stops
+    // auto-advance for good; hovering pauses it; reduced motion disables it.
+    const cycleSec = Number(root.dataset.cycle || 0);
+    let auto = cycleSec > 0 && models.length > 1 && !reduceMotion;
+    let hovering = false;
+    const step = (d: number) => show((index + d + models.length) % models.length);
+    root.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) =>
+      b.addEventListener('click', () => {
+        auto = false;
+        step(Number(b.dataset.step));
+      }),
+    );
+    stage.addEventListener('pointerenter', () => (hovering = true));
+    stage.addEventListener('pointerleave', () => (hovering = false));
+    canvas.addEventListener('pointerdown', () => (auto = false));
+    if (auto) {
+      setInterval(() => {
+        if (auto && !hovering && visible && !document.hidden) step(1);
+      }, cycleSec * 1000);
+    }
+
     await show(0);
+    // Warm the cache so switching models is instant.
+    models.slice(1).forEach((m) => load(m).catch(() => {}));
   }
 
   for (const root of document.querySelectorAll<HTMLElement>('[data-viewer]')) {
@@ -249,6 +286,27 @@ const { title, note, models, bare = false } = Astro.props;
   }
   .bar[hidden] {
     display: none;
+  }
+  .nav {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    display: flex;
+    gap: 0.4rem;
+  }
+  .nav-btn {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    color: var(--ink);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .nav-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .viewer-head {
     display: flex;

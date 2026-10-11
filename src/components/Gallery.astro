@@ -1,0 +1,199 @@
+---
+// Click-through photo gallery: one large image, arrows, and a thumbnail strip.
+// Works without JS too (shows the first photo; thumbnails are plain links then).
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Item {
+  src: ImageMetadata;
+  alt: string;
+  title: string; // project name
+  caption: string;
+  href: string;
+}
+interface Props {
+  items: Item[];
+  label: string;
+}
+const { items, label } = Astro.props;
+---
+
+<section class="gallery" aria-roledescription="carousel" aria-label={label} data-gallery tabindex="0">
+  <div class="stage">
+    {
+      items.map((it, i) => (
+        <figure class="slide" data-slide hidden={i !== 0} aria-roledescription="slide" aria-label={`${i + 1} of ${items.length}`}>
+          <div class="frame">
+            <Image src={it.src} alt={it.alt} widths={[640, 1000, 1400]} sizes="(max-width: 900px) 100vw, 60vw" loading={i === 0 ? 'eager' : 'lazy'} />
+          </div>
+          <figcaption>
+            <span class="title">{it.title}</span>
+            <span class="cap">{it.caption}</span>
+            <a href={it.href} class="more">
+              Learn more<span class="visually-hidden">: {it.title}</span>
+            </a>
+          </figcaption>
+        </figure>
+      ))
+    }
+    <button type="button" class="arrow prev" data-step="-1" aria-label="Previous photo">&larr;</button>
+    <button type="button" class="arrow next" data-step="1" aria-label="Next photo">&rarr;</button>
+  </div>
+  <div class="thumbs" role="group" aria-label="Choose a photo">
+    {
+      items.map((it, i) => (
+        <button type="button" class="thumb" data-thumb={i} aria-current={i === 0 ? 'true' : 'false'} aria-label={`${it.title}: ${it.caption}`}>
+          <Image src={it.src} alt="" widths={[160, 320]} sizes="120px" />
+        </button>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-gallery]')) {
+    const slides = [...root.querySelectorAll<HTMLElement>('[data-slide]')];
+    const thumbs = [...root.querySelectorAll<HTMLButtonElement>('[data-thumb]')];
+    let index = 0;
+    const show = (i: number) => {
+      index = (i + slides.length) % slides.length;
+      slides.forEach((s, j) => (s.hidden = j !== index));
+      thumbs.forEach((t, j) => t.setAttribute('aria-current', String(j === index)));
+      thumbs[index]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    };
+    root.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) => b.addEventListener('click', () => show(index + Number(b.dataset.step))));
+    thumbs.forEach((t, j) => t.addEventListener('click', () => show(j)));
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(index - 1);
+      else if (e.key === 'ArrowRight') show(index + 1);
+      else return;
+      e.preventDefault();
+    });
+  }
+</script>
+
+<style>
+  .gallery {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .gallery:focus-visible {
+    outline-offset: 6px;
+  }
+  .stage {
+    position: relative;
+  }
+  .slide {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 1.5rem;
+    align-items: end;
+  }
+  .slide[hidden] {
+    display: none;
+  }
+  .frame {
+    aspect-ratio: 16 / 9;
+    background: var(--img-bg);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .frame :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  figcaption {
+    display: grid;
+    gap: 0.35rem;
+    padding-bottom: 0.25rem;
+  }
+  .title {
+    font-weight: 500;
+    font-size: 1.15rem;
+  }
+  .cap {
+    color: var(--ink-2);
+  }
+  .more {
+    margin-top: 0.4rem;
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 0.92rem;
+    text-underline-offset: 4px;
+  }
+  .more::after {
+    content: ' \2192';
+  }
+  .arrow {
+    position: absolute;
+    top: calc(50% - 22px);
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    color: var(--ink);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .arrow:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .prev {
+    left: 0.75rem;
+  }
+  /* Sits on the image's right edge, left of the caption column. */
+  .next {
+    right: calc(300px + 2.25rem);
+  }
+  .thumbs {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  .thumb {
+    flex: 0 0 auto;
+    width: 120px;
+    aspect-ratio: 4 / 3;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--img-bg);
+    cursor: pointer;
+    opacity: 0.55;
+    overflow: hidden;
+  }
+  .thumb :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .thumb:hover {
+    opacity: 0.85;
+  }
+  .thumb[aria-current='true'] {
+    opacity: 1;
+    border: 2px solid var(--accent);
+  }
+  @media (max-width: 900px) {
+    .slide {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+    }
+    .frame {
+      aspect-ratio: 4 / 3;
+    }
+    .arrow {
+      top: calc(37% - 22px);
+    }
+    .next {
+      right: 0.75rem;
+    }
+  }
+</style>

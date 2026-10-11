@@ -27,10 +27,12 @@ export const facts = [
   { label: 'Based in', value: 'London, ON', note: 'Ontario, Canada' },
 ];
 
-// Project shown in the hero (folder name under src/content/projects).
-export const heroProject = 'offroad-rc-vehicle';
-// Lighter model file for the hero (keeps the landing page fast). Null = use the project's first 3D model.
-export const heroModelSrc: string | null = '/models/offroad-rc-vehicle/assembly-lite.glb';
+// 3D models the hero cycles through: project folder + a lighter model file
+// (keeps the landing page fast). Rotation/finish come from the project's own viewer.
+export const heroModels = [
+  { project: 'offroad-rc-vehicle', src: '/models/offroad-rc-vehicle/assembly-lite.glb' },
+  { project: 'humanoid-neck', src: '/models/humanoid-neck/neck-assembly-lite.glb' },
+];
 
 export const education = [
   {

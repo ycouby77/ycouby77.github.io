@@ -71,7 +71,8 @@ h3 {
 }
 
 .wrap {
-  width: min(1120px, 100% - 32px);
+  /* Uses most of the screen, with a gutter that grows on wide displays. */
+  width: min(1680px, 100% - 2 * clamp(16px, 4vw, 72px));
   margin-inline: auto;
 }
 

@@ -170,35 +170,98 @@ const { title, note, models, bare = false, cycle = 0 } = Astro.props;
       camera.far = dist * 100;
       // Three-quarter view from slightly above, close enough that the model fills the frame.
       camera.position.set(dist * 0.58, dist * 0.4, dist * 0.58);
+      viewDist = Math.hypot(dist * 0.58, dist * 0.4, dist * 0.58);
       camera.updateProjectionMatrix();
       controls.target.set(0, size.y / 2, 0);
       controls.update();
     }
 
-    // Exploded view: every part moves away from the assembly centre along its own
-    // offset, so outer parts travel further (like a classic exploded drawing).
+    // Exploded view. Each top-level component (a part or a whole sub-assembly, so e.g. the
+    // Arduino keeps its pins) first moves out from the assembly centre along its own offset;
+    // then a separation pass pushes apart any components whose boxes still overlap, so
+    // nothing ends up inside something else. The camera pulls back to fit the spread.
     type Part = { mesh: Object3D; home: InstanceType<typeof THREE.Vector3>; dir: InstanceType<typeof THREE.Vector3> };
-    const explodeParts = new Map<Object3D, Part[]>();
+    type Explode = { parts: Part[]; grow: number };
+    const explodeData = new Map<Object3D, Explode>();
     function prepareExplode(obj: Object3D) {
       obj.updateMatrixWorld(true);
-      const centre = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
-      const parts: Part[] = [];
-      obj.traverse((o) => {
-        if (!(o as Mesh).isMesh || !o.parent) return;
-        const c = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
-        const offsetWorld = c.clone().sub(centre);
-        // Express the world offset in the parent's local space.
-        const a = o.parent.worldToLocal(c.clone());
-        const b = o.parent.worldToLocal(c.clone().add(offsetWorld));
-        parts.push({ mesh: o, home: o.position.clone(), dir: b.sub(a) });
+      const all = new THREE.Box3().setFromObject(obj);
+      const centre = all.getCenter(new THREE.Vector3());
+      const assembled = all.getSize(new THREE.Vector3()).length() || 1;
+
+      // Walk past wrapper nodes (scene root, the assembly node) to the components.
+      const hasMesh = (o: Object3D) => {
+        let found = false;
+        o.traverse((c) => (found ||= (c as Mesh).isMesh === true));
+        return found;
+      };
+      let level: Object3D = obj;
+      let units = level.children.filter(hasMesh);
+      while (units.length === 1 && !(units[0] as Mesh).isMesh) {
+        level = units[0];
+        units = level.children.filter(hasMesh);
+      }
+
+      const boxes = units.map((u) => new THREE.Box3().setFromObject(u));
+      const centres = boxes.map((b) => b.getCenter(new THREE.Vector3()));
+      // World-space displacement at full explode: start radially...
+      const d = centres.map((c) => c.clone().sub(centre).multiplyScalar(0.9));
+      // ...then relax overlaps (axis of least penetration, split between the pair).
+      const gap = assembled * 0.015;
+      const axes = ['x', 'y', 'z'] as const;
+      for (let iter = 0; iter < 150; iter++) {
+        let moved = false;
+        for (let i = 0; i < units.length; i++) {
+          for (let j = i + 1; j < units.length; j++) {
+            let best: (typeof axes)[number] | null = null;
+            let bestPen = Infinity;
+            let overlapAll = true;
+            for (const ax of axes) {
+              const pen = Math.min(boxes[i].max[ax] + d[i][ax], boxes[j].max[ax] + d[j][ax]) - Math.max(boxes[i].min[ax] + d[i][ax], boxes[j].min[ax] + d[j][ax]) + gap;
+              if (pen <= 0) {
+                overlapAll = false;
+                break;
+              }
+              if (pen < bestPen) {
+                bestPen = pen;
+                best = ax;
+              }
+            }
+            if (!overlapAll || !best) continue;
+            const diff = centres[j][best] + d[j][best] - (centres[i][best] + d[i][best]);
+            const sign = diff === 0 ? 1 : Math.sign(diff);
+            d[i][best] -= (sign * bestPen) / 2;
+            d[j][best] += (sign * bestPen) / 2;
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+
+      const exploded = new THREE.Box3();
+      const parts: Part[] = units.map((u, i) => {
+        exploded.union(boxes[i].clone().translate(d[i]));
+        // Express the world displacement in the parent's local space.
+        const a = u.parent!.worldToLocal(centres[i].clone());
+        const b = u.parent!.worldToLocal(centres[i].clone().add(d[i]));
+        return { mesh: u, home: u.position.clone(), dir: b.sub(a) };
       });
-      explodeParts.set(obj, parts);
+      explodeData.set(obj, { parts, grow: exploded.getSize(new THREE.Vector3()).length() / assembled });
     }
     const explodeInput = root.querySelector<HTMLInputElement>('[data-explode]');
     const explodeWrap = root.querySelector<HTMLElement>('[data-explode-wrap]');
+    let viewDist = 0; // camera distance for the assembled model (set in frame())
     function applyExplode(v: number) {
-      const parts = current ? explodeParts.get(current.children.length === 1 && explodeParts.has(current.children[0]) ? current.children[0] : current) : undefined;
-      parts?.forEach((p) => p.mesh.position.copy(p.home).addScaledVector(p.dir, v * 1.4));
+      if (!current) return;
+      const key = current.children.length === 1 && explodeData.has(current.children[0]) ? current.children[0] : current;
+      const data = explodeData.get(key);
+      if (!data) return;
+      data.parts.forEach((p) => p.mesh.position.copy(p.home).addScaledVector(p.dir, v));
+      // Pull the camera back so the exploded layout stays in frame.
+      if (viewDist) {
+        const dirToCam = camera.position.clone().sub(controls.target).normalize();
+        camera.position.copy(controls.target).addScaledVector(dirToCam, viewDist * (1 + (data.grow - 1) * v * 0.8));
+      }
     }
     explodeInput?.addEventListener('input', () => applyExplode(Number(explodeInput.value)));
 

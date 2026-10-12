@@ -43,7 +43,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   <HeroScene />
   <section class="hero wrap">
     <div class="hero-text">
-      <p class="eyebrow">{profile.name}</p>
+      <p class="eyebrow avail">{profile.availability ?? profile.name}</p>
       <h1>{headLead} <em>{headTail}</em></h1>
       <p class="intro">{profile.tagline}</p>
       <div class="cta">
@@ -111,10 +111,10 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
           <h3 class="label">Also built</h3>
           <ul>
             {other.map((p) => (
-              <li class:list={{ 'has-thumb': p.data.gallery.length > 0 }}>
-                {p.data.gallery[0] && (
+              <li class:list={{ 'has-thumb': Boolean(p.data.cover ?? p.data.gallery[0]) }}>
+                {(p.data.cover ?? p.data.gallery[0]) && (
                   <a class="other-thumb" href={`/projects/${p.id}`} tabindex="-1" aria-hidden="true">
-                    <Image src={p.data.gallery[0].src} alt="" widths={[480, 960]} sizes="320px" quality={90} />
+                    <Image src={(p.data.cover ?? p.data.gallery[0])!.src} alt="" widths={[480, 960]} sizes="320px" quality={90} />
                   </a>
                 )}
                 <a href={`/projects/${p.id}`}>{p.data.title}</a>
@@ -219,6 +219,18 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     position: relative;
     z-index: 1;
     padding-bottom: clamp(11rem, 31vh, 19rem);
+  }
+  /* Availability: a real status, so it gets a small steady status dot. */
+  .avail::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 0.5rem;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    vertical-align: 0.1em;
   }
   .hero h1 em {
     font-style: italic;

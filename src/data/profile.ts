@@ -18,7 +18,7 @@ export const profile = {
   // Longer, more detailed version (2 pages), offered under the resume.
   cvPdf: '/Yacoub_Derradji_CV.pdf',
   // Shown as a status tag; set to null to hide.
-  availability: null as string | null,
+  availability: 'Open to a 4-month co-op for Summer 2027.' as string | null,
 };
 
 // Quick facts for the strip under the hero. Keep these short and plain.
@@ -104,7 +104,7 @@ export const leadership: Role[] = [
   {
     title: 'General Member',
     org: 'WE First Club, Western University',
-    period: 'Sept. 2025 - Apr. 2026',
+    period: 'Sept. 2025 - Aug. 2026',
     location: 'London, ON',
     project: 'humanoid-neck',
     points: ["Developed the neck-tilt mechanism for Baker Bot, the club's humanoid robot; took part in the Ri3D build"],
@@ -118,11 +118,11 @@ export const skills = [
   },
   {
     group: 'Actuation & mechanisms',
-    items: ['MR-fluid clutch actuators', 'Magnetic-circuit reasoning', 'Linkage design', 'Tendon actuation', 'Servo control'],
+    items: ['MR-fluid clutch actuators', 'Magnetic-circuit reasoning', 'Linkage design', 'Servo control'],
   },
   {
     group: 'Electrical & embedded',
-    items: ['Arduino', 'ESP32', 'Motor drivers', 'PWM control', 'Schematics & pinouts', 'Soldering'],
+    items: ['Arduino', 'Motor drivers', 'PWM control', 'Schematics & pinouts', 'Soldering'],
   },
   { group: 'Robotics & simulation', items: ['ROS 2', 'Gazebo', 'MATLAB', 'Simulink'] },
   { group: 'Programming', items: ['Python', 'C/C++', 'Java', 'SQLite', 'Git/GitHub'] },

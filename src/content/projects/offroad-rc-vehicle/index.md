@@ -20,7 +20,7 @@ specs:
   - { label: Budget, value: Under $200 }
 results:
   - Fully operational vehicle with custom chassis and drivetrain
-  - Handles off-road terrain; electronics hold up under load
+  - Drove successfully in indoor testing after the suspension and steering revisions
   - Modular design allows component swaps without a full rebuild
 gallery:
   - { src: ./build.png, alt: The finished RC vehicle with red 3D-printed suspension arms and exposed electronics, label: Build, caption: Operational vehicle }

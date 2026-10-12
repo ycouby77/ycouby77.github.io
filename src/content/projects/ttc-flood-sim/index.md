@@ -1,7 +1,6 @@
 ---
 title: TTC Flood Rerouting Simulation
 order: 4
-featured: true
 context: ES 1050 course project
 period: Winter 2025, rebuilt 2026
 disciplines: [Graph algorithms, GIS, Python]

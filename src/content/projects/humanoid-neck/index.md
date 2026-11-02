@@ -26,6 +26,9 @@ gallery:
   - { src: ./bench-prototype.png, alt: Bench prototype of the neck with two servos and a red triangular top plate, label: '01', caption: Bench prototype }
   - { src: ./final-cad.png, alt: Onshape CAD of the neck mechanism with the head attached, label: '02', caption: Final CAD with head, matte: '#ffffff' }
   - { src: ./on-baker-bot.png, alt: The finished neck and head mounted on the Baker Bot torso, label: '03', caption: Integrated on Baker Bot }
+videos:
+  - { src: /videos/humanoid-neck/neck-tilt-v1.mp4, poster: /videos/humanoid-neck/neck-tilt-v1.jpg, alt: The bench prototype's top plate tilting back and forth under servo power, label: '04', caption: Bench prototype tilting under servo power }
+  - { src: /videos/humanoid-neck/neck-tilt-v2.mp4, poster: /videos/humanoid-neck/neck-tilt-v2.jpg, alt: The revised neck with metal pushrods tilting its top plate in several directions under servo power, label: '05', caption: Revised linkage tilting under servo power }
 viewer:
   title: Neck assembly in 3D
   models:

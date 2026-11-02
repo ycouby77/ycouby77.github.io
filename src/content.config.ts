@@ -47,6 +47,19 @@ const projects = defineCollection({
       cover: z.object({ src: image(), alt: z.string() }).optional(),
       // Shown under the gallery, e.g. confidentiality notes.
       galleryNote: z.string().optional(),
+      // Short silent clips that loop under the gallery. Files live in public/videos/<slug>/.
+      videos: z
+        .array(
+          z.object({
+            src: z.string().regex(/\.(mp4|webm)$/i, 'Use an .mp4 or .webm file'),
+            // Still frame shown before the clip loads.
+            poster: z.string().optional(),
+            alt: z.string(),
+            label: z.string(),
+            caption: z.string(),
+          }),
+        )
+        .default([]),
       links: z.array(z.object({ label: z.string(), href: z.url() })).default([]),
       // Prior work this project builds on, shown as citation cards.
       references: z

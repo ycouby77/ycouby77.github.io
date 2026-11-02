@@ -61,6 +61,21 @@ const num = String(data.order).padStart(2, '0');
     {data.galleryNote && <p class="note">{data.galleryNote}</p>}
 
     {
+      data.videos.length > 0 && (
+        <section class="motion" aria-label="Videos">
+          {data.videos.map((v) => (
+            <figure>
+              <video src={v.src} poster={v.poster} aria-label={v.alt} autoplay muted loop playsinline preload="metadata" data-motion />
+              <figcaption class="meta">
+                <span class="tag">{v.label}</span> · {v.caption}
+              </figcaption>
+            </figure>
+          ))}
+        </section>
+      )
+    }
+
+    {
       data.references.length > 0 && (
         <section class="refs" aria-labelledby="refs-title">
           <h2 id="refs-title" class="label">Builds on</h2>
@@ -132,6 +147,17 @@ const num = String(data.order).padStart(2, '0');
   </article>
 </Base>
 
+<script>
+  // Reduced motion: don't autoplay the loops; give the viewer play controls instead.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (const v of document.querySelectorAll<HTMLVideoElement>('[data-motion]')) {
+      v.autoplay = false;
+      v.pause();
+      v.controls = true;
+    }
+  }
+</script>
+
 <style>
   .case {
     padding-block: clamp(2.5rem, 7vw, 5rem);
@@ -186,6 +212,25 @@ const num = String(data.order).padStart(2, '0');
   }
   .stack figcaption {
     text-align: center;
+  }
+  /* Phone clips are portrait: a centred row at one height, never wider than the page. */
+  .motion {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+  .motion figure {
+    width: min(100%, calc(clamp(320px, 70vh, 640px) * 9 / 16));
+  }
+  .motion video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    object-fit: cover;
+    border-radius: var(--radius);
+    background: var(--img-bg);
   }
   .note {
     font-size: 0.85rem;

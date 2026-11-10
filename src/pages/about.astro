@@ -1,0 +1,334 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import PhotoSlot from '../components/PhotoSlot.astro';
+import { profile, facts, skills, awards, education } from '../data/profile';
+import { bio, headshot, sidePhotos, lifePhotos, lifeIntro, timeline } from '../data/about';
+---
+
+<Base title="About" description={`About ${profile.name}: who I am, how I got into robotics, and what I do outside engineering.`}>
+  <section class="wrap intro">
+    <div class="intro-text">
+      <h1>
+        Hi, I'm Yacoub.
+        <span class="face"><PhotoSlot photo={headshot} round sizes="88px" /></span>
+      </h1>
+      {bio.map((para) => <p class="para">{para}</p>)}
+      <div class="cta">
+        <a class="btn btn-primary" href={`mailto:${profile.email}`}><Icon name="mail" /> {profile.email}</a>
+        <a class="btn" href="/resume">Resume</a>
+      </div>
+    </div>
+    <div class="side-photos">
+      {sidePhotos.map((ph) => <PhotoSlot photo={ph} ratio="4 / 3" sizes="(max-width: 900px) 100vw, 40vw" />)}
+    </div>
+  </section>
+
+  <section class="wrap">
+    <dl class="stats">
+      {
+        facts.map((s) => (
+          <div>
+            <dt class="meta">{s.label}</dt>
+            <dd class="val">{s.value}</dd>
+            <dd class="note">{s.note}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <section class="section wrap">
+    <h2 class="section-title">How I got here</h2>
+    <ol class="timeline">
+      {
+        timeline.map((t) => (
+          <li>
+            <span class="when">{t.when}</span>
+            <div>
+              <h3>{t.href ? <a href={t.href}>{t.title}</a> : t.title}</h3>
+              <p>{t.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="section wrap">
+    <h2 class="section-title">Outside engineering</h2>
+    <p class="lede">{lifeIntro}</p>
+    <div class="life">
+      {lifePhotos.map((ph, i) => <PhotoSlot photo={ph} ratio={i % 3 === 1 ? '3 / 4' : '4 / 3'} sizes="(max-width: 760px) 50vw, 33vw" showCaption />)}
+    </div>
+  </section>
+
+  <section class="section wrap">
+    <h2 class="section-title">Skills and education</h2>
+    <dl class="skills">
+      {
+        skills.map((g) => (
+          <div>
+            <dt class="label">{g.group}</dt>
+            <dd>{g.items.join(', ')}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <div class="edu-awards">
+      <div>
+        <h3 class="label">Education</h3>
+        {
+          education.map((e) => (
+            <div class="edu">
+              <p class="school">{e.school}</p>
+              <p>{e.degree}</p>
+              <p class="meta">{e.period}</p>
+            </div>
+          ))
+        }
+      </div>
+      <div>
+        <h3 class="label">Awards and certifications</h3>
+        <ul class="awards">
+          {
+            awards.map((a) => (
+              <li>
+                <strong>{a.title}</strong>
+                {a.detail && <span>, {a.detail}</span>}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap closing">
+    <h2 class="section-title">Open to a co-op for Summer 2027.</h2>
+    <p class="lede">Robotics, mechanical design, embedded systems. If you're building something interesting, I'd like to hear about it.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href={`mailto:${profile.email}`}><Icon name="mail" /> Email me</a>
+      <a class="btn" href={profile.linkedin} rel="me noopener" target="_blank"><Icon name="brand-linkedin" /> LinkedIn</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) 2rem;
+  }
+  .intro-text {
+    display: grid;
+    gap: 1.1rem;
+    position: sticky;
+    top: 90px;
+  }
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    letter-spacing: -0.03em;
+  }
+  .face {
+    width: 88px;
+    flex: none;
+  }
+  .para {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 1.1rem;
+    max-width: 60ch;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .side-photos {
+    display: grid;
+    gap: 1rem;
+  }
+  .section-title {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    margin-bottom: 2rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 1rem 0 0;
+    border-block: 1px solid var(--line-strong);
+  }
+  .stats > div {
+    padding: 0.9rem 1rem;
+    border-left: 1px solid var(--line-strong);
+  }
+  .stats > div:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .stats dd {
+    margin: 0;
+  }
+  .val {
+    font-size: 1.3rem;
+    font-weight: 500;
+  }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    max-width: 900px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7.5rem;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    width: 1px;
+    background: linear-gradient(var(--accent), var(--line-strong));
+  }
+  .timeline li {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 2rem;
+    padding-block: 0.9rem;
+    position: relative;
+  }
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    left: calc(7.5rem - 4px);
+    top: 1.35rem;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+  }
+  .when {
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding-top: 0.2rem;
+    text-align: right;
+  }
+  .timeline h3 {
+    font-size: 1.2rem;
+  }
+  .timeline h3 a {
+    color: var(--ink);
+    text-decoration-color: var(--accent);
+    text-underline-offset: 4px;
+  }
+  .timeline p {
+    margin: 0.25rem 0 0;
+    color: var(--ink-2);
+  }
+
+  .life {
+    columns: 3 260px;
+    column-gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .life > :global(*) {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  .skills {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 1.75rem 3rem;
+    margin: 0;
+  }
+  .skills dd {
+    margin: 0.35rem 0 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+  .edu-awards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 2rem 3rem;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+  }
+  .edu p {
+    margin: 0.3rem 0 0;
+    color: var(--ink-2);
+  }
+  .edu .school {
+    margin-top: 0.75rem;
+    color: var(--ink);
+    font-size: 1.15rem;
+    font-weight: 500;
+  }
+  .awards {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+  .awards li {
+    padding-block: 0.3rem;
+  }
+  .awards strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .closing {
+    border-top: 1px solid var(--line);
+  }
+  .closing .section-title {
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 900px) {
+    .intro {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .intro-text {
+      position: static;
+    }
+  }
+  @media (max-width: 640px) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .stats > div:nth-child(odd) {
+      border-left: 0;
+      padding-left: 0;
+    }
+    .stats > div:nth-child(n + 3) {
+      border-top: 1px solid var(--line-strong);
+    }
+    .timeline::before,
+    .timeline li::before {
+      left: 0;
+    }
+    .timeline li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.2rem;
+      padding-left: 1.25rem;
+    }
+    .when {
+      text-align: left;
+    }
+  }
+</style>

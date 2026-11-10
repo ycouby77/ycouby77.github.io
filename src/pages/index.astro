@@ -1,20 +1,21 @@
 ---
 import { getCollection } from 'astro:content';
-import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import ProjectSheet from '../components/ProjectSheet.astro';
-import RoleList from '../components/RoleList.astro';
 import TitleBlock from '../components/TitleBlock.astro';
 import ModelViewer from '../components/ModelViewer.astro';
 import Icon from '../components/Icon.astro';
-import Gallery from '../components/Gallery.astro';
 import HeroScene from '../components/HeroScene.astro';
 import Contours from '../components/Contours.astro';
-import { profile, facts, heroModels, experience, leadership, skills, awards, education } from '../data/profile';
+import WorkCard from '../components/WorkCard.astro';
+import RoleCard from '../components/RoleCard.astro';
+import PhotoSlot from '../components/PhotoSlot.astro';
+import { profile, heroModels, experience, leadership } from '../data/profile';
+import { teaser, headshot, teaserPhotos } from '../data/about';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
-const other = projects.filter((p) => !p.data.featured);
+// Home grid: the first six projects by order (two rows of three). Everything is on /projects.
+const homeCards = projects.slice(0, 6);
 // Hero carousel: each configured project's first 3D model, swapped for the lighter file.
 const heroItems = heroModels.flatMap(({ project: id, src }) => {
   const project = projects.find((p) => p.id === id);
@@ -22,20 +23,12 @@ const heroItems = heroModels.flatMap(({ project: id, src }) => {
   if (!project || !model) return [];
   return [{ project, model: { ...model, label: project.data.title, src }, num: String(featured.indexOf(project) + 1).padStart(2, '0') }];
 });
-
-// Photo gallery: every featured project's images, interleaved across projects so
-// consecutive photos come from different builds.
-const perProject = featured.map((p) =>
-  p.data.gallery.map((img) => ({ src: img.src, alt: img.alt, caption: img.caption, title: p.data.title, href: `/projects/${p.id}` })),
-);
+// Experience cards: current roles first, then the rest in order.
+const roles = [...experience, ...leadership].sort((a, b) => Number(b.status === 'Current') - Number(a.status === 'Current'));
 // Headline: last two words set in italic (same words, just emphasis).
 const words = profile.headline.split(' ');
 const headLead = words.slice(0, -2).join(' ');
 const headTail = words.slice(-2).join(' ');
-
-const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.length)) }, (_, i) =>
-  perProject.map((l) => l[i]).filter(Boolean),
-).flat();
 ---
 
 <Base>
@@ -77,105 +70,39 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   </section>
   </div>
 
-  <section class="wrap facts">
-    <dl class="stats">
-      {
-        facts.map((s) => (
-          <div>
-            <dt class="meta">{s.label}</dt>
-            <dd class="val">{s.value}</dd>
-            <dd class="note">{s.note}</dd>
-          </div>
-        ))
-      }
-    </dl>
-  </section>
-
-  <section class="photos wrap" aria-labelledby="photos-title">
-    <h2 id="photos-title" class="visually-hidden">Build photos</h2>
-    <Gallery items={photos} label="Build photos" />
-  </section>
-
-  <section id="work" class="section wrap">
-    <Contours peaks={[[0.95, 0.06], [0.02, 0.55], [0.9, 0.92]]} />
-    <h2 class="section-title">Selected work</h2>
-    {
-      featured.map((p, i) => (
-        <ProjectSheet project={p} index={i + 1} layout={i % 2 === 1 ? 'flip' : 'split'} />
-      ))
-    }
-
-    {
-      other.length > 0 && (
-        <div class="other">
-          <h3 class="label">Also built</h3>
-          <ul>
-            {other.map((p) => (
-              <li class:list={{ 'has-thumb': Boolean(p.data.cover ?? p.data.gallery[0]) }}>
-                {(p.data.cover ?? p.data.gallery[0]) && (
-                  <a class="other-thumb" href={`/projects/${p.id}`} tabindex="-1" aria-hidden="true">
-                    <Image src={(p.data.cover ?? p.data.gallery[0])!.src} alt="" widths={[480, 960]} sizes="320px" quality={90} />
-                  </a>
-                )}
-                <a href={`/projects/${p.id}`}>{p.data.title}</a>
-                <p>{p.data.summary}</p>
-                <span class="meta">{p.data.tools.slice(0, 3).join(', ')}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )
-    }
-  </section>
-
-  <section id="experience" class="section wrap">
-    <Contours peaks={[[0.08, 0.2]]} />
-    <h2 class="section-title">Experience</h2>
-    <RoleList roles={experience} />
-    <div class="leadership">
-      <h3 class="label">Leadership</h3>
-      <RoleList roles={leadership} compact />
+  <section id="work" class="section wrap work">
+    <Contours peaks={[[0.95, 0.06], [0.02, 0.55]]} />
+    <div class="section-head">
+      <h2 class="section-title">Projects</h2>
+      <a class="see-all" href="/projects">All {projects.length} projects <Icon name="arrow-right" size={16} /></a>
+    </div>
+    <div class="card-grid">
+      {homeCards.map((p, i) => <WorkCard project={p} eager={i < 3} />)}
     </div>
   </section>
 
-  <section id="skills" class="section wrap">
-    <h2 class="section-title">Skills</h2>
-    <dl class="skills">
-      {
-        skills.map((g) => (
-          <div>
-            <dt class="label">{g.group}</dt>
-            <dd>{g.items.join(', ')}</dd>
-          </div>
-        ))
-      }
-    </dl>
-    <div class="edu-awards">
-      <div>
-        <h3 class="label">Education</h3>
-        {
-          education.map((e) => (
-            <div class="edu">
-              <p class="school">{e.school}</p>
-              <p>{e.degree}</p>
-              <p class="meta">{e.period}</p>
-            </div>
-          ))
-        }
-      </div>
-      <div>
-        <h3 class="label">Awards and certifications</h3>
-        <ul class="awards">
-          {
-            awards.map((a) => (
-              <li>
-                <strong>{a.title}</strong>
-                {a.detail && <span>, {a.detail}</span>}
-              </li>
-            ))
-          }
-        </ul>
-      </div>
+  <section id="experience" class="section wrap">
+    <div class="section-head">
+      <h2 class="section-title">Experience</h2>
+      <a class="see-all" href="/resume">Full resume <Icon name="arrow-right" size={16} /></a>
+    </div>
+    <div class="role-grid">
+      {roles.map((r) => <RoleCard role={r} />)}
+    </div>
+  </section>
+
+  <section class="section wrap about-teaser">
+    <div class="about-photos">
+      {teaserPhotos.map((ph) => <PhotoSlot photo={ph} ratio="4 / 5" sizes="(max-width: 760px) 50vw, 280px" />)}
+    </div>
+    <div class="about-text">
+      <p class="eyebrow">About me</p>
+      <h2 class="hi">
+        Hi, I'm Yacoub.
+        <span class="hi-face"><PhotoSlot photo={headshot} round sizes="64px" /></span>
+      </h2>
+      <p class="lede">{teaser}</p>
+      <a class="btn" href="/about">More about me <Icon name="arrow-right" size={16} /></a>
     </div>
   </section>
 
@@ -207,10 +134,10 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
 </script>
 
 <style>
-  /* Full-width night scene; the forest horizon sits along its bottom edge. */
+  /* Night scene behind the hero; the forest horizon sits along its bottom edge.
+     Kept short so the project cards start near the fold. */
   .hero-band {
     position: relative;
-    min-height: calc(100svh - 61px);
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -218,7 +145,7 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   .hero-band .hero {
     position: relative;
     z-index: 1;
-    padding-bottom: clamp(11rem, 31vh, 19rem);
+    padding-bottom: clamp(7rem, 18vh, 11rem);
   }
   /* Availability: a real status, so it gets a small steady status dot. */
   .avail::before {
@@ -236,14 +163,11 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     font-style: italic;
     color: #cfe9da;
   }
-  .facts {
-    padding-block: 1.5rem 0.5rem;
-  }
   .hero {
-    padding-block: clamp(3rem, 7vw, 5.5rem) 3rem;
+    padding-block: clamp(2rem, 5vw, 3.5rem) 3rem;
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-    gap: 2.5rem 3rem;
+    gap: 2rem 3rem;
     align-items: center;
   }
   .hero-text {
@@ -258,7 +182,6 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
   }
   .section-title {
     font-size: clamp(1.8rem, 4vw, 2.6rem);
-    margin-bottom: 2rem;
   }
   .intro {
     margin: 0;
@@ -274,36 +197,90 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     display: block;
     text-decoration: none;
   }
-  .icon-btn :global(svg) {
-    margin-left: -0.15rem;
-  }
-
-  .photos {
-    padding-block: 2.5rem;
-    border-top: 1px solid var(--line);
-  }
   [data-hero-caption][hidden] {
     display: none;
   }
-  .other li.has-thumb {
-    grid-template-columns: 320px minmax(0, 15rem) minmax(0, 1fr) minmax(0, 12rem);
+  .icon-btn :global(svg) {
+    margin-left: -0.15rem;
   }
-  .other-thumb {
-    border-radius: var(--radius);
-    display: block;
-    aspect-ratio: 16 / 10;
-    background: var(--img-bg);
-    border: 1px solid var(--line);
-    overflow: hidden;
-    align-self: center;
-  }
-  .other-thumb :global(img) {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top left;
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
   }
 
+  /* Card grids */
+  .work {
+    padding-top: clamp(1.5rem, 3vw, 2.5rem);
+  }
+  .see-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .see-all:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .card-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1rem, 1.6vw, 1.25rem);
+  }
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 1rem;
+  }
+
+  /* About preview */
+  .about-teaser {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+    border-top: 1px solid var(--line);
+  }
+  .about-photos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .about-photos > :global(:nth-child(2)) {
+    margin-top: 3rem;
+  }
+  .about-text {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+  }
+  .hi {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+  }
+  .hi-face {
+    width: 64px;
+    flex: none;
+  }
+  .about-text .lede {
+    margin: 0;
+  }
+
+  /* Contact */
+  .contact {
+    border-top: 1px solid var(--line);
+  }
+  .contact .section-title {
+    margin-bottom: 2rem;
+  }
   .li-card {
     border-radius: var(--radius);
     display: grid;
@@ -349,131 +326,6 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     font-weight: 500;
     font-size: 0.92rem;
   }
-  @media (max-width: 640px) {
-    .li-card {
-      grid-template-columns: auto minmax(0, 1fr);
-    }
-    .li-cta {
-      grid-column: 1 / -1;
-    }
-  }
-
-  .cta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: center;
-  }
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin: 1.5rem 0 0;
-    border-block: 1px solid var(--line-strong);
-  }
-  .stats > div {
-    padding: 0.9rem 1rem;
-    border-left: 1px solid var(--line-strong);
-  }
-  .stats > div:first-child {
-    border-left: 0;
-    padding-left: 0;
-  }
-  .stats dd {
-    margin: 0;
-  }
-  .val {
-    font-size: 1.3rem;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-  }
-  .note {
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  /* "Also built": plain rows, not a third card grid. */
-  .other {
-    margin-top: 3.5rem;
-  }
-  .other ul {
-    list-style: none;
-    padding: 0;
-    margin: 1rem 0 0;
-    border-top: 1px solid var(--line-strong);
-  }
-  .other li {
-    display: grid;
-    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) minmax(0, 12rem);
-    gap: 0.4rem 2rem;
-    align-items: baseline;
-    padding-block: 1.1rem;
-  }
-  .other li > a {
-    font-weight: 500;
-    font-size: 1.05rem;
-    text-decoration: none;
-  }
-  .other p {
-    margin: 0;
-    color: var(--ink-2);
-    font-size: 0.95rem;
-  }
-  .other .meta {
-    text-transform: none;
-    letter-spacing: 0;
-    text-align: right;
-  }
-
-  .leadership {
-    margin-top: 3rem;
-  }
-  .leadership .label {
-    margin-bottom: 1rem;
-  }
-
-  .skills {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-    gap: 1.75rem 3rem;
-    margin: 0;
-  }
-  .skills dd {
-    margin: 0.35rem 0 0;
-    color: var(--ink-2);
-    font-size: 0.95rem;
-  }
-  .edu-awards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-    gap: 2rem 3rem;
-    margin-top: 3.5rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--line);
-  }
-  .edu p {
-    margin: 0.3rem 0 0;
-    color: var(--ink-2);
-  }
-  .edu .school {
-    margin-top: 0.75rem;
-    color: var(--ink);
-    font-size: 1.15rem;
-    font-weight: 500;
-  }
-  .awards {
-    list-style: none;
-    padding: 0;
-    margin: 0.75rem 0 0;
-    color: var(--ink-2);
-    font-size: 0.95rem;
-  }
-  .awards li {
-    padding-block: 0.3rem;
-  }
-  .awards strong {
-    color: var(--ink);
-    font-weight: 500;
-  }
   .contact-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -488,46 +340,31 @@ const photos = Array.from({ length: Math.max(0, ...perProject.map((l) => l.lengt
     display: inline-block;
     padding-block: 0.4rem;
   }
+
   @media (max-width: 900px) {
     .hero {
       grid-template-columns: minmax(0, 1fr);
     }
-  }
-  @media (max-width: 1000px) {
-    .other li.has-thumb {
-      grid-template-columns: 200px minmax(0, 1fr);
-    }
-    .other li.has-thumb > :not(.other-thumb) {
-      grid-column: 2;
-    }
-    .other li.has-thumb .other-thumb {
-      grid-row: span 3;
-    }
-  }
-  @media (max-width: 760px) {
-    .other li,
-    .other li.has-thumb {
+    .about-teaser {
       grid-template-columns: minmax(0, 1fr);
     }
-    .other li.has-thumb > :not(.other-thumb),
-    .other li.has-thumb .other-thumb {
-      grid-column: auto;
-      grid-row: auto;
+  }
+  @media (max-width: 1100px) {
+    .card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .other .meta {
-      text-align: left;
+  }
+  @media (max-width: 680px) {
+    .card-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
   @media (max-width: 640px) {
-    .stats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .li-card {
+      grid-template-columns: auto minmax(0, 1fr);
     }
-    .stats > div:nth-child(odd) {
-      border-left: 0;
-      padding-left: 0;
-    }
-    .stats > div:nth-child(n + 3) {
-      border-top: 1px solid var(--line-strong);
+    .li-cta {
+      grid-column: 1 / -1;
     }
   }
 </style>

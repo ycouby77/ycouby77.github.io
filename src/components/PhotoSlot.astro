@@ -1,0 +1,65 @@
+---
+// A photo, or an empty dashed slot with its caption when the photo isn't added yet.
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import type { AboutPhoto } from '../data/about';
+
+interface Props {
+  photo: AboutPhoto;
+  ratio?: string;
+  sizes?: string;
+  round?: boolean;
+  showCaption?: boolean;
+}
+const { photo, ratio = '4 / 5', sizes = '400px', round = false, showCaption = false } = Astro.props;
+---
+
+<figure class:list={['slot', { round }]} style={`--ratio: ${ratio}`}>
+  {
+    photo.src ? (
+      <Image src={photo.src} alt={photo.alt} widths={[400, 800, 1200]} sizes={sizes} quality={85} style={photo.position ? `object-position: ${photo.position}` : undefined} />
+    ) : (
+      <div class="empty" role="img" aria-label={`Photo placeholder: ${photo.caption}`}>
+        <Icon name="photo" size={round ? 20 : 26} />
+        {!round && <span>{photo.caption}</span>}
+      </div>
+    )
+  }
+  {showCaption && photo.src && <figcaption>{photo.caption}</figcaption>}
+</figure>
+
+<style>
+  .slot {
+    margin: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .slot :global(img),
+  .empty {
+    width: 100%;
+    aspect-ratio: var(--ratio);
+    border-radius: var(--radius);
+    object-fit: cover;
+  }
+  .round :global(img),
+  .round .empty {
+    border-radius: 50%;
+    aspect-ratio: 1;
+  }
+  .empty {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    border: 1.5px dashed var(--line-strong);
+    background: rgb(16 19 22 / 0.5);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  figcaption {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+</style>

@@ -1,0 +1,111 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import WorkCard from '../../components/WorkCard.astro';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+// Filter buttons: only categories some project actually uses, in a fixed order.
+const order = ['Robotics', 'Mechanical', 'Embedded', 'Software', 'Research'];
+const used = new Set(projects.flatMap((p) => p.data.categories));
+const filters = order.filter((c) => used.has(c as never));
+---
+
+<Base title="Projects" description="Robotics, mechanical, embedded and software projects by Yacoub Derradji.">
+  <section class="wrap page">
+    <header class="head">
+      <h1>Projects</h1>
+      <p class="lede">
+        Research, team builds, personal builds and course projects. Each page covers what I worked on, the design
+        decisions, and how testing went.
+      </p>
+    </header>
+
+    <div class="filters" role="group" aria-label="Filter projects">
+      <button type="button" class="chip" aria-pressed="true" data-filter="all">All <span>{projects.length}</span></button>
+      {
+        filters.map((f) => (
+          <button type="button" class="chip" aria-pressed="false" data-filter={f}>
+            {f} <span>{projects.filter((p) => p.data.categories.includes(f as never)).length}</span>
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="grid" data-grid>
+      {projects.map((p, i) => <WorkCard project={p} eager={i < 2} />)}
+    </div>
+  </section>
+</Base>
+
+<script>
+  const chips = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+  const cards = document.querySelectorAll<HTMLElement>('[data-grid] [data-categories]');
+  chips.forEach((chip) =>
+    chip.addEventListener('click', () => {
+      const f = chip.dataset.filter!;
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+      cards.forEach((card) => {
+        card.hidden = f !== 'all' && !card.dataset.categories!.split(',').includes(f);
+      });
+    }),
+  );
+</script>
+
+<style>
+  .page {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(3.5rem, 8vw, 6rem);
+  }
+  .head {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  h1 {
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    letter-spacing: -0.03em;
+  }
+  .lede {
+    margin: 0;
+  }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    background: rgb(6 7 8 / 0.4);
+    color: var(--ink-2);
+    font: 500 0.92rem/1 var(--font-body);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+  .chip span {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .chip[aria-pressed='true'] span {
+    color: var(--accent-ink);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+</style>

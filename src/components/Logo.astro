@@ -1,0 +1,18 @@
+---
+// Maker's mark: a "Y" whose arms meet at a pivot joint, with an arc sweeping from the
+// right arm round to the foot of the stem so the whole mark reads as a "D".
+// Same drawing as public/favicon.svg (which adds the dark tile behind it).
+interface Props {
+  size?: number;
+}
+const { size = 30 } = Astro.props;
+---
+
+<svg class="logo" width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+  <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6.5 7 13 16.5V25.5" />
+    <path d="M19.5 7 13 16.5" />
+    <path d="M19.5 7C29.5 7.5 29.5 25.5 13 25.5" />
+  </g>
+  <circle cx="13" cy="16.5" r="2.7" fill="var(--logo-hole, #060708)" stroke="currentColor" stroke-width="1.8" />
+</svg>

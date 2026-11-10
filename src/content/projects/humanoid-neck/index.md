@@ -1,8 +1,11 @@
 ---
-title: Humanoid Neck-Tilt Mechanism
+title: Baker Bot Neck Mechanism
 order: 2
 featured: true
 context: Baker Bot · WE First Club
+role: Designed and built the neck mechanism
+status: Neck mechanism
+categories: [Robotics, Mechanical]
 period: May 2026 - Aug. 2026
 disciplines: [Humanoid robotics, Mechanism design, Integration]
 summary: >-
@@ -21,7 +24,9 @@ specs:
   - { label: Role, value: Design → integration }
 results:
   - Linkage validated on the bench before integration; pitch motion tested on the final assembly
-  - Basic nodding working on the robot with the full head; integrated with a teammate's rotation base and handed off to the software and torso teams
+  - Basic nodding working on the robot; integrated with a teammate's rotation base and handed off to the software and torso teams
+  - The head that came after is heavier than this neck was sized for, so it is not stiff enough for the full assembly; a new team has taken over the project and is designing the next neck
+cover: { src: ./baker-bot.jpg, alt: 'Baker Bot on a workbench: a white 3D-printed head on the neck mechanism, above an aluminium-frame torso with two arms' }
 gallery:
   - { src: ./bench-prototype.png, alt: Bench prototype of the neck with two servos and a red triangular top plate, label: '01', caption: Bench prototype }
   - { src: ./final-cad.png, alt: Onshape CAD of the neck mechanism with the head attached, label: '02', caption: Final CAD with head, matte: '#ffffff' }

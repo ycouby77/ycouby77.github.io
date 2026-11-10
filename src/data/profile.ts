@@ -51,8 +51,14 @@ export const education = [
 ];
 
 export type Role = {
+  // Anchor on the resume page (/resume#id); role cards without a project link there.
+  id: string;
   title: string;
   org: string;
+  // Short org name for cards, e.g. "ARM Lab".
+  orgShort: string;
+  // Chip on the role's card, e.g. "Current" or "Completed".
+  status: string;
   period: string;
   location: string;
   points: string[];
@@ -62,8 +68,11 @@ export type Role = {
 
 export const experience: Role[] = [
   {
+    id: 'arm-lab',
     title: 'Undergraduate Researcher',
     org: 'Advanced Robotics & Mechatronics (ARM) Lab, Western University',
+    orgShort: 'ARM Lab, Western',
+    status: 'Current',
     period: 'May 2026 - Present',
     location: 'London, ON',
     project: 'mr-clutch-actuator',
@@ -74,8 +83,11 @@ export const experience: Role[] = [
     ],
   },
   {
+    id: 'weap',
     title: 'Planning and Controls Developer',
     org: 'Western Engineering Autopilot (WEAP)',
+    orgShort: 'Western Engineering Autopilot',
+    status: 'Completed',
     period: 'Oct. 2025 - Dec. 2025',
     location: 'London, ON',
     points: [
@@ -85,8 +97,11 @@ export const experience: Role[] = [
     ],
   },
   {
+    id: 'formula',
     title: 'Electrical Team Member',
     org: 'Western Formula Racing (FSAE)',
+    orgShort: 'Western Formula Racing',
+    status: 'Completed',
     period: 'Sept. 2024 - Mar. 2025',
     location: 'London, ON',
     points: ["Created the tractive system schematic and connector pinouts for the team's electric race car"],
@@ -95,15 +110,21 @@ export const experience: Role[] = [
 
 export const leadership: Role[] = [
   {
+    id: 'botbrawl',
     title: 'Mechanical Lead, BotBrawl Combat Robot Team',
     org: 'WE First Club, Western University',
+    orgShort: 'WE First Club',
+    status: 'Current',
     period: 'Aug. 2026 - Present',
     location: 'London, ON',
     points: ["Lead mechanical design and build of the club's combat robot for the 2026-27 BotBrawl season, organizing the mechanical sub-team"],
   },
   {
+    id: 'we-first',
     title: 'General Member',
     org: 'WE First Club, Western University',
+    orgShort: 'WE First Club',
+    status: 'Completed',
     period: 'Sept. 2025 - Aug. 2026',
     location: 'London, ON',
     project: 'humanoid-neck',

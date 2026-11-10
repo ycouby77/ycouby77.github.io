@@ -12,7 +12,7 @@ const { roles, compact = false } = Astro.props;
 <ol class:list={['roles', { compact }]}>
   {
     roles.map((r) => (
-      <li class="role">
+      <li class="role" id={r.id}>
         <div class="when meta">{r.period}</div>
         <div>
           <h3>{r.title}</h3>
@@ -44,6 +44,7 @@ const { roles, compact = false } = Astro.props;
     padding: 0;
   }
   .role {
+    scroll-margin-top: 80px;
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
     gap: 1.5rem;

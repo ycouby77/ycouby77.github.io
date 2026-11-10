@@ -1,21 +1,29 @@
 ---
-// Site-wide night sky: a fixed canvas behind every page with twinkling stars, a faint
-// star-chart grid (strongest at the top of the page), and the odd shooting star.
-// Stars drift slower than the page scrolls (parallax). Static for reduced motion,
-// paused when the tab is hidden.
+// Site-wide night sky: a fixed canvas behind every page with still stars, a faint
+// star-chart grid near the top, and the odd shooting star you can click (each shows a
+// short line from src/data/facts.ts). Stars drift slower than the page scrolls.
+//
+// Kept calm on purpose: the canvas only redraws when you scroll, resize, or while a
+// shooting star is crossing. No shooting stars for reduced motion.
+import { starFacts } from '../data/facts';
 ---
 
 <canvas class="night-sky" aria-hidden="true" data-night-sky></canvas>
+<div class="star-toast" role="status" aria-live="polite" data-star-toast data-facts={JSON.stringify(starFacts)}>
+  <span class="star-toast-label">You caught a shooting star</span>
+  <span class="star-toast-text" data-star-toast-text></span>
+</div>
 
 <script>
   const canvas = document.querySelector<HTMLCanvasElement>('[data-night-sky]');
   const ctx = canvas?.getContext('2d');
   if (canvas && ctx) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
     let W = 0;
     let H = 0;
-    type Star = { x: number; y: number; s: number; t: number; depth: number };
+    type Star = { x: number; y: number; s: number; a: number; depth: number };
     let stars: Star[] = [];
 
     function resize() {
@@ -25,83 +33,188 @@
       canvas!.width = W * dpr;
       canvas!.height = H * dpr;
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.round((W * H) / 4200);
+      const count = Math.round((W * H) / 5200);
       stars = Array.from({ length: count }, () => ({
         x: rand(0, W),
         y: rand(0, H * 1.6), // taller than the screen so parallax has stars to reveal
-        s: rand(0.3, 1.4),
-        t: rand(0, Math.PI * 2),
+        s: rand(0.3, 1.3),
+        a: rand(0.2, 0.75),
         depth: rand(0.03, 0.12), // how much this star moves with scroll
       }));
     }
 
-    let shoot: { x: number; y: number; l: number } | null = null;
+    // Shooting stars: slow enough to click. One every 15-30 s, the first after ~5 s.
+    type Shoot = { x: number; y: number; l: number; dx: number; dy: number };
+    let shoot: Shoot | null = null;
+    const SHOOT_LEN = 520;
+    const shootHead = (s: Shoot) => ({ x: s.x - s.l * s.dx, y: s.y + s.l * s.dy });
+    type Spark = { x: number; y: number; vx: number; vy: number; life: number };
+    let sparks: Spark[] = [];
 
-    function draw(t: number) {
+    function draw() {
       const scroll = window.scrollY;
       ctx!.clearRect(0, 0, W, H);
 
       // Star-chart grid: rings and meridians around a pole off the top-right corner,
-      // turning very slowly; fades as you scroll away from the top.
-      const chartAlpha = Math.max(0.025, 0.09 * (1 - scroll / (H * 1.5)));
-      const cx = W * 0.82;
-      const cy = H * 0.08 - scroll * 0.05;
-      const rot = reduce ? 0 : t * 0.000012;
-      ctx!.save();
-      ctx!.globalAlpha = chartAlpha;
-      ctx!.strokeStyle = '#9fd3ff';
-      ctx!.lineWidth = 1;
-      for (let i = 1; i <= 8; i++) {
-        ctx!.beginPath();
-        ctx!.arc(cx, cy, i * 120, 0, Math.PI * 2);
-        ctx!.stroke();
+      // fading out as you scroll away from the top.
+      const chartAlpha = 0.06 * Math.max(0, 1 - scroll / (H * 1.2));
+      if (chartAlpha > 0.004) {
+        const cx = W * 0.82;
+        const cy = H * 0.08 - scroll * 0.05;
+        ctx!.save();
+        ctx!.globalAlpha = chartAlpha;
+        ctx!.strokeStyle = '#9fd3ff';
+        ctx!.lineWidth = 1;
+        for (let i = 1; i <= 8; i++) {
+          ctx!.beginPath();
+          ctx!.arc(cx, cy, i * 120, 0, Math.PI * 2);
+          ctx!.stroke();
+        }
+        for (let k = 0; k < 12; k++) {
+          const a = (k * Math.PI) / 6;
+          ctx!.beginPath();
+          ctx!.moveTo(cx, cy);
+          ctx!.lineTo(cx + Math.cos(a) * 2000, cy + Math.sin(a) * 2000);
+          ctx!.stroke();
+        }
+        ctx!.restore();
       }
-      for (let k = 0; k < 12; k++) {
-        const a = (k * Math.PI) / 6 + rot;
-        ctx!.beginPath();
-        ctx!.moveTo(cx, cy);
-        ctx!.lineTo(cx + Math.cos(a) * 2000, cy + Math.sin(a) * 2000);
-        ctx!.stroke();
-      }
-      ctx!.restore();
 
       for (const s of stars) {
         const y = (((s.y - scroll * s.depth) % (H * 1.6)) + H * 1.6) % (H * 1.6);
         if (y > H) continue;
-        const tw = reduce ? 0.8 : 0.55 + 0.45 * Math.sin(t * 0.0016 + s.t);
-        ctx!.fillStyle = `rgba(225, 236, 255, ${0.25 + 0.6 * tw})`;
+        ctx!.fillStyle = `rgba(225, 236, 255, ${s.a})`;
         ctx!.fillRect(s.x, y, s.s, s.s);
       }
 
-      if (!reduce) {
-        if (!shoot && Math.random() < 0.0025) shoot = { x: rand(W * 0.2, W), y: rand(0, H * 0.35), l: 0 };
-        if (shoot) {
-          shoot.l += 11;
-          const len = Math.min(shoot.l, 140);
-          const hx = shoot.x - shoot.l * 0.9;
-          const hy = shoot.y + shoot.l * 0.35;
-          ctx!.strokeStyle = `rgba(230, 240, 255, ${Math.max(0, 1 - shoot.l / 300)})`;
-          ctx!.lineWidth = 1.2;
-          ctx!.beginPath();
-          ctx!.moveTo(hx, hy);
-          ctx!.lineTo(hx + len * 0.9, hy - len * 0.35);
-          ctx!.stroke();
-          if (shoot.l > 300) shoot = null;
-        }
+      if (shoot) {
+        const len = Math.min(shoot.l, 160);
+        const h = shootHead(shoot);
+        const fade = Math.max(0, 1 - Math.max(0, shoot.l - SHOOT_LEN * 0.6) / (SHOOT_LEN * 0.4));
+        const tail = ctx!.createLinearGradient(h.x, h.y, h.x + len * shoot.dx, h.y - len * shoot.dy);
+        tail.addColorStop(0, `rgba(240, 248, 255, ${fade})`);
+        tail.addColorStop(1, 'rgba(240, 248, 255, 0)');
+        ctx!.strokeStyle = tail;
+        ctx!.lineWidth = 1.6;
+        ctx!.beginPath();
+        ctx!.moveTo(h.x, h.y);
+        ctx!.lineTo(h.x + len * shoot.dx, h.y - len * shoot.dy);
+        ctx!.stroke();
+      }
+
+      for (const p of sparks) {
+        ctx!.fillStyle = `rgba(200, 255, 220, ${Math.max(0, p.life)})`;
+        ctx!.fillRect(p.x, p.y, 2, 2);
       }
     }
 
-    resize();
-    window.addEventListener('resize', resize);
-    if (reduce) {
-      draw(0); // one still frame, no motion
-    } else {
-      const loop = (t: number) => {
-        if (!document.hidden) draw(t);
-        requestAnimationFrame(loop);
-      };
-      requestAnimationFrame(loop);
+    // Redraw at most once per frame, only when asked.
+    let queued = false;
+    const request = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        draw();
+      });
+    };
+
+    // Shooting-star animation: runs only while one (or its sparkle) is on screen.
+    let animating = false;
+    function step() {
+      if (shoot) {
+        shoot.l += 5;
+        if (shoot.l > SHOOT_LEN) {
+          shoot = null;
+          schedule();
+        }
+      }
+      for (const p of sparks) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.94;
+        p.vy *= 0.94;
+        p.life -= 0.022;
+      }
+      sparks = sparks.filter((p) => p.life > 0);
+      draw();
+      if (shoot || sparks.length) requestAnimationFrame(step);
+      else animating = false;
     }
+    const animate = () => {
+      if (!animating) {
+        animating = true;
+        requestAnimationFrame(step);
+      }
+    };
+    function schedule(delay = rand(15000, 30000)) {
+      window.setTimeout(() => {
+        if (document.hidden) return schedule(3000);
+        const ang = rand(0.28, 0.5);
+        shoot = { x: rand(W * 0.35, W), y: rand(0, H * 0.3), l: 0, dx: Math.cos(ang), dy: Math.sin(ang) };
+        animate();
+      }, delay);
+    }
+
+    // Catching a shooting star.
+    const toast = document.querySelector<HTMLElement>('[data-star-toast]');
+    const toastText = document.querySelector<HTMLElement>('[data-star-toast-text]');
+    const facts: string[] = JSON.parse(toast?.dataset.facts ?? '[]');
+    let factOrder: number[] = [];
+    let toastTimer = 0;
+    function nextFact() {
+      if (!factOrder.length) factOrder = facts.map((_, i) => i).sort(() => Math.random() - 0.5);
+      return facts[factOrder.pop()!];
+    }
+    const nearShoot = (x: number, y: number) => {
+      if (!shoot) return false;
+      const h = shootHead(shoot);
+      return Math.hypot(x - h.x, y - h.y) < 48;
+    };
+    if (!reduce && toast && toastText && facts.length) {
+      window.addEventListener('pointerdown', (e) => {
+        const target = e.target as Element | null;
+        if (target?.closest('a, button, input, textarea, select, label, canvas:not(.hero-scene), .leaflet-container')) return;
+        if (!nearShoot(e.clientX, e.clientY)) return;
+        for (let i = 0; i < 24; i++) {
+          const a = rand(0, Math.PI * 2);
+          const v = rand(1, 4);
+          sparks.push({ x: e.clientX, y: e.clientY, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1 });
+        }
+        shoot = null;
+        schedule();
+        animate();
+        toastText.textContent = nextFact();
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove('show'), 7000);
+      });
+      toast.addEventListener('click', () => toast.classList.remove('show'));
+      if (finePointer) {
+        let pointing = false;
+        window.addEventListener(
+          'pointermove',
+          (e) => {
+            if (!shoot && !pointing) return;
+            const near = nearShoot(e.clientX, e.clientY);
+            if (near !== pointing) {
+              pointing = near;
+              document.documentElement.classList.toggle('star-hover', near);
+            }
+          },
+          { passive: true },
+        );
+      }
+      schedule(5000);
+    }
+
+    resize();
+    draw();
+    window.addEventListener('resize', () => {
+      resize();
+      request();
+    });
+    window.addEventListener('scroll', request, { passive: true });
   }
 </script>
 
@@ -113,5 +226,42 @@
     height: 100%;
     z-index: -1;
     pointer-events: none;
+  }
+  :global(html.star-hover),
+  :global(html.star-hover *) {
+    cursor: pointer;
+  }
+  .star-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    z-index: 30;
+    display: grid;
+    gap: 0.25rem;
+    max-width: min(30rem, calc(100vw - 2rem));
+    padding: 0.85rem 1.1rem;
+    border: 1px solid rgb(126 240 196 / 0.35);
+    border-radius: var(--radius);
+    background: rgb(6 7 8 / 0.9);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: translate(-50%, 0.75rem);
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .star-toast:global(.show) {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .star-toast-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+  .star-toast-text {
+    color: var(--ink);
+    line-height: 1.45;
   }
 </style>

@@ -1,4 +1,11 @@
 ---
+// Project page, written as a story: a big opening image, then Overview → Scope →
+// My contribution → the process (any "## Heading" sections in index.md) → media →
+// Where it stands → Research it builds on. A sticky sidebar holds the key facts and an
+// "On this page" list that follows the reader.
+//
+// Sections only appear when they have content. In `npm run dev`, missing story sections
+// show a dashed "to write" box so you can see what's left; they never appear on the live site.
 import { getCollection, render } from 'astro:content';
 import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
@@ -6,123 +13,86 @@ import TitleBlock from '../../components/TitleBlock.astro';
 import ModelViewer from '../../components/ModelViewer.astro';
 import FloodMap from '../../components/FloodMap.astro';
 import PaperCard from '../../components/PaperCard.astro';
+import WorkCard from '../../components/WorkCard.astro';
 
 export async function getStaticPaths() {
   const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
   return projects.map((project, i) => ({
     params: { slug: project.id },
-    props: { project, next: projects[(i + 1) % projects.length] },
+    // "Keep exploring": the next three projects in order, wrapping around.
+    props: { project, more: [1, 2, 3].map((k) => projects[(i + k) % projects.length]) },
   }));
 }
 
-const { project, next } = Astro.props;
+const { project, more } = Astro.props;
 const { data } = project;
-const { Content } = await render(project);
-const num = String(data.order).padStart(2, '0');
+const { Content, headings } = await render(project);
+const dev = import.meta.env.DEV;
+
+const hero = data.cover ?? data.gallery[0];
+const heroMatte = hero && 'matte' in hero ? hero.matte : undefined;
+// Markdown "## Heading" sections are the process steps.
+const steps = headings.filter((h) => h.depth === 2);
+const hasMedia = data.gallery.length > 0 || data.videos.length > 0;
+
+// Sections in reading order; `show` decides whether each one renders.
+const sections = [
+  { id: 'overview', title: 'Overview', show: true },
+  { id: 'scope', title: 'Scope', show: Boolean(data.objective) || data.specs.length > 0 },
+  { id: 'contribution', title: 'My contribution', show: true },
+  ...steps.map((h) => ({ id: h.slug, title: h.text, show: true, step: true })),
+  { id: 'process', title: 'The process', show: dev && steps.length === 0, todo: true },
+  { id: 'try-it', title: 'Try it', show: Boolean(data.simulation) },
+  { id: 'model', title: data.viewer?.title ?? '3D model', show: Boolean(data.viewer) },
+  { id: 'gallery', title: 'Photos and clips', show: hasMedia },
+  { id: 'progress', title: 'Where it stands', show: data.results.length > 0 || Boolean(data.status) },
+  { id: 'research', title: 'Research it builds on', show: data.references.length > 0 },
+].filter((s) => s.show);
+const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).padStart(2, '0');
 ---
 
 <Base title={data.title} description={data.summary}>
   <article class="wrap case">
     <header class="head">
+      <a href="/projects" class="back">← All projects</a>
+      <p class="context">{data.context}</p>
       <h1>{data.title}</h1>
-      <p class="lede">{data.summary}</p>
-      <TitleBlock
-        cells={[
-          { label: 'Sheet', value: num },
-          { label: 'Context', value: data.context },
-          { label: 'Period', value: data.period },
-          ...data.specs,
-        ].slice(0, 6)}
-      />
+      <ul class="tags">
+        {data.disciplines.map((d) => <li>{d}</li>)}
+      </ul>
     </header>
 
     {
-      data.gallery.length > 0 && (
-        <section class:list={['gallery', data.galleryLayout]} style={`--n: ${data.gallery.length}`} aria-label="Images">
-          {data.gallery.map((g) => (
-            // Justified row: each figure grows in proportion to its image's aspect ratio,
-            // so every image in the row shares one height with no cropping or bars.
-            <figure style={`--ar: ${g.src.width / g.src.height}`}>
-              <div class="frame">
-                {data.galleryLayout === 'stack' ? (
-                  <Image src={g.src} alt={g.alt} widths={[960, 1440, 1920]} sizes="(max-width: 1100px) 100vw, 1100px" quality={90} />
-                ) : (
-                  <Image src={g.src} alt={g.alt} widths={[400, 700, 1000, 1400]} sizes="(max-width: 800px) 100vw, 33vw" quality={90} />
-                )}
-              </div>
-              <figcaption class="meta">
-                <span class="tag">{g.label}</span> · {g.caption}
-              </figcaption>
-            </figure>
-          ))}
-        </section>
-      )
-    }
-    {data.galleryNote && <p class="note">{data.galleryNote}</p>}
-
-    {
-      data.videos.length > 0 && (
-        <section class="motion" aria-label="Videos">
-          {data.videos.map((v) => (
-            <figure>
-              <video src={v.src} poster={v.poster} aria-label={v.alt} autoplay muted loop playsinline preload="metadata" data-motion />
-              <figcaption class="meta">
-                <span class="tag">{v.label}</span> · {v.caption}
-              </figcaption>
-            </figure>
-          ))}
-        </section>
+      hero && (
+        <figure class:list={['hero', { matted: heroMatte }]} style={heroMatte ? `--matte: ${heroMatte}` : undefined}>
+          <Image src={hero.src} alt={hero.alt} widths={[800, 1200, 1700, 2200]} sizes="(max-width: 1720px) 100vw, 1680px" loading="eager" quality={88} />
+        </figure>
       )
     }
 
-    {
-      data.references.length > 0 && (
-        <section class="refs" aria-labelledby="refs-title">
-          <h2 id="refs-title" class="label">Builds on</h2>
-          {data.references.map((r) => (
-            <PaperCard {...r} />
-          ))}
-        </section>
-      )
-    }
-
-    {data.simulation && <FloodMap src={data.simulation.src} />}
-    {data.viewer && <ModelViewer {...data.viewer} />}
-
-    <div class="cols">
-      <aside>
-        {
-          data.objective && (
-            <>
-              <h2 class="label">Objective</h2>
-              <p class="objective">{data.objective}</p>
-            </>
-          )
-        }
-        {
-          data.tools.length > 0 && (
-            <>
-              <h2 class="label">Tools</h2>
-              <p class="tools">{data.tools.join(', ')}</p>
-            </>
-          )
-        }
-      </aside>
-      <div class="main">
-        <h2 class="label">What I did</h2>
-        <div class="prose"><Content /></div>
-        {
-          data.results.length > 0 && (
-            <>
-              <h2 class="label">Results</h2>
-              <ul class="prose-list">
-                {data.results.map((r) => (
-                  <li>{r}</li>
-                ))}
-              </ul>
-            </>
-          )
-        }
+    <div class="layout">
+      <aside class="side">
+        <dl class="facts">
+          {data.role && (<div><dt>My role</dt><dd>{data.role}</dd></div>)}
+          <div><dt>When</dt><dd>{data.period}</dd></div>
+          {data.status && (<div><dt>Status</dt><dd class="status">{data.status}</dd></div>)}
+          <div><dt>Context</dt><dd>{data.context}</dd></div>
+          {data.tools.length > 0 && (<div><dt>Tools</dt><dd class="tools">{data.tools.join(', ')}</dd></div>)}
+        </dl>
+        <nav class="toc" aria-label="On this page">
+          <p class="toc-title">On this page</p>
+          <ol>
+            {
+              sections.map((s) => (
+                <li>
+                  <a href={`#${s.id}`} data-toc={s.id} class:list={{ todo: 'todo' in s }}>
+                    {s.title}
+                  </a>
+                </li>
+              ))
+            }
+          </ol>
+        </nav>
         {
           data.links.length > 0 && (
             <div class="links">
@@ -134,16 +104,142 @@ const num = String(data.order).padStart(2, '0');
             </div>
           )
         }
+      </aside>
+
+      <div class="story">
+        <section id="overview" data-section>
+          <p class="kicker">{num('overview')} / Overview</p>
+          <p class="lede">{data.summary}</p>
+        </section>
+
+        {
+          sections.some((s) => s.id === 'scope') && (
+            <section id="scope" data-section>
+              <p class="kicker">{num('scope')} / Scope</p>
+              <h2>What it had to do</h2>
+              {data.objective && <p class="body">{data.objective}</p>}
+              {data.specs.length > 0 && <TitleBlock cells={data.specs} />}
+            </section>
+          )
+        }
+
+        <section id="contribution" data-section>
+          <p class="kicker">{num('contribution')} / My contribution</p>
+          <h2>What I did</h2>
+          <div class="prose">
+            <Content />
+          </div>
+        </section>
+
+        {
+          sections.some((s) => s.id === 'process') && (
+            <section id="process" data-section class="todo-box">
+              <p class="kicker">{num('process')} / The process</p>
+              <h2>To write</h2>
+              <p>
+                Tell the build as a story in this project's index.md, one "## Heading" per step: the problem, what you
+                tried, what broke, what you changed. Each heading becomes its own numbered section and sidebar link.
+                (Only visible on your computer.)
+              </p>
+            </section>
+          )
+        }
+
+        {
+          data.simulation && (
+            <section id="try-it" data-section>
+              <p class="kicker">{num('try-it')} / Try it</p>
+              <h2>Flood a street</h2>
+              <FloodMap src={data.simulation.src} />
+            </section>
+          )
+        }
+
+        {
+          data.viewer && (
+            <section id="model" data-section>
+              <p class="kicker">{num('model')} / Explore the assembly</p>
+              <ModelViewer {...data.viewer} />
+            </section>
+          )
+        }
+
+        {
+          hasMedia && (
+            <section id="gallery" data-section>
+              <p class="kicker">{num('gallery')} / A closer look</p>
+              <h2>Photos and clips</h2>
+              {data.gallery.length > 0 && (
+                <div class:list={['gallery', data.galleryLayout]}>
+                  {data.gallery.map((g) => (
+                    <figure style={`--ar: ${g.src.width / g.src.height}`}>
+                      <div class="frame" style={g.matte ? `background: ${g.matte}` : undefined}>
+                        <Image src={g.src} alt={g.alt} widths={[400, 700, 1000, 1400]} sizes="(max-width: 900px) 100vw, 50vw" quality={90} />
+                      </div>
+                      <figcaption class="meta">
+                        <span class="tag">{g.label}</span> · {g.caption}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
+              {data.galleryNote && <p class="note">{data.galleryNote}</p>}
+              {data.videos.length > 0 && (
+                <div class="motion">
+                  {data.videos.map((v) => (
+                    <figure>
+                      <video src={v.src} poster={v.poster} aria-label={v.alt} autoplay muted loop playsinline preload="metadata" data-motion />
+                      <figcaption class="meta">
+                        <span class="tag">{v.label}</span> · {v.caption}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
+            </section>
+          )
+        }
+
+        {
+          sections.some((s) => s.id === 'progress') && (
+            <section id="progress" data-section>
+              <p class="kicker">{num('progress')} / Where it stands</p>
+              <h2>{data.status ?? 'Results'}</h2>
+              {data.results.length > 0 && (
+                <ul class="prose-list">
+                  {data.results.map((r) => (
+                    <li>{r}</li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )
+        }
+
+        {
+          data.references.length > 0 && (
+            <section id="research" data-section>
+              <p class="kicker">{num('research')} / Research it builds on</p>
+              <div class="refs">
+                {data.references.map((r) => (
+                  <PaperCard {...r} />
+                ))}
+              </div>
+            </section>
+          )
+        }
       </div>
     </div>
 
-    <nav class="pager" aria-label="More projects">
-      <a href="/#work" class="meta">← All work</a>
-      <a href={`/projects/${next.id}`} class="next">
-        <span class="meta">Next sheet</span>
-        <span class="next-title">{next.data.title} →</span>
-      </a>
-    </nav>
+    <section class="more" aria-labelledby="more-title">
+      <div class="more-head">
+        <h2 id="more-title">Keep exploring</h2>
+        <a href="/projects" class="back">All projects →</a>
+      </div>
+      <div class="more-grid">
+        {more.map((p) => <WorkCard project={p} />)}
+      </div>
+    </section>
   </article>
 </Base>
 
@@ -156,53 +252,278 @@ const num = String(data.order).padStart(2, '0');
       v.controls = true;
     }
   }
+
+  // Sidebar: highlight the section being read. Markdown "## Heading" steps count too.
+  const links = new Map<string, HTMLElement>();
+  document.querySelectorAll<HTMLElement>('[data-toc]').forEach((a) => links.set(a.dataset.toc!, a));
+  const targets = [...links.keys()].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+  const setActive = (id: string) => links.forEach((a, key) => a.classList.toggle('active', key === id));
+  const onScroll = () => {
+    const line = window.innerHeight * 0.3;
+    let current = targets[0]?.id;
+    for (const t of targets) if (t.getBoundingClientRect().top <= line) current = t.id;
+    if (current) setActive(current);
+  };
+  let queued = false;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        onScroll();
+      });
+    },
+    { passive: true },
+  );
+  onScroll();
 </script>
 
 <style>
   .case {
-    padding-block: clamp(2.5rem, 7vw, 5rem);
+    padding-block: clamp(2rem, 5vw, 3.5rem) clamp(3.5rem, 8vw, 6rem);
   }
   .head {
     display: grid;
-    gap: 1.25rem;
+    gap: 0.75rem;
+    justify-items: start;
+    max-width: 60rem;
+  }
+  .back {
+    color: var(--muted);
+    font-size: 0.92rem;
+    text-decoration: none;
+  }
+  .back:hover {
+    color: var(--accent);
+  }
+  .context {
+    margin: 0.75rem 0 0;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    font-size: 0.82rem;
+    color: var(--ink-2);
   }
   h1 {
-    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    font-size: clamp(2.3rem, 5.5vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
   }
-  .gallery {
+  .tags {
+    list-style: none;
     display: flex;
-    gap: 1rem;
-    margin-top: 2.5rem;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.1rem;
+    margin: 0;
+    padding: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
   }
-  .gallery:not(.stack) figure {
-    flex: var(--ar) 1 0%;
-    min-width: 0;
+  .hero {
+    margin: 2rem 0 0;
+    border-radius: calc(var(--radius) + 6px);
+    overflow: hidden;
+    aspect-ratio: 21 / 9;
+    background: var(--img-bg);
+    border: 1px solid var(--line);
+  }
+  .hero :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hero.matted {
+    background: var(--matte);
+  }
+  .hero.matted :global(img) {
+    object-fit: contain;
+    padding: 2%;
+  }
+
+  /* Sidebar + story */
+  .layout {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    margin-top: clamp(2rem, 4vw, 3.5rem);
+  }
+  .side {
+    position: sticky;
+    top: 84px;
+    align-self: start;
+    display: grid;
+    gap: 1.75rem;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+  .facts {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 1.1rem 1.15rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .facts dt {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .facts dd {
+    margin: 0.15rem 0 0;
+    color: var(--ink);
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .facts .status {
+    color: var(--accent);
+  }
+  .facts .tools {
+    color: var(--ink-2);
+    font-size: 0.88rem;
+  }
+  .toc-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--line-strong);
+  }
+  .toc a {
+    display: block;
+    padding: 0.35rem 0 0.35rem 0.9rem;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    color: var(--muted);
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .toc a:hover {
+    color: var(--ink);
+  }
+  .toc a:global(.active) {
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+  .toc a.todo {
+    font-style: italic;
+    color: var(--warm);
+  }
+  .links {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+
+  .story {
+    display: grid;
+    gap: clamp(3rem, 6vw, 4.5rem);
+    max-width: 52rem;
+  }
+  .story section {
+    scroll-margin-top: 90px;
+  }
+  .kicker {
+    margin: 0 0 0.6rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .story h2 {
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    margin-bottom: 1rem;
+  }
+  .lede {
+    margin: 0;
+    font-size: clamp(1.15rem, 1.8vw, 1.35rem);
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .body {
+    color: var(--ink-2);
+    font-size: 1.05rem;
+    margin: 0 0 1.5rem;
+  }
+  .prose {
+    color: var(--ink-2);
+    font-size: 1.05rem;
+  }
+  .prose :global(h2) {
+    scroll-margin-top: 90px;
+    margin-top: 3rem;
+    color: var(--ink);
+  }
+  .prose :global(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+  }
+  .prose :global(ul),
+  .prose-list {
+    padding-left: 1.1rem;
+    color: var(--ink-2);
+    font-size: 1.05rem;
+  }
+  .prose :global(li),
+  .prose-list li {
+    margin-block: 0.5rem;
+  }
+  .prose :global(li::marker),
+  .prose-list li::marker {
+    color: var(--accent);
+  }
+  .todo-box {
+    padding: 1.25rem 1.4rem;
+    border: 1.5px dashed rgb(255 207 138 / 0.5);
+    border-radius: var(--radius);
+    color: var(--warm);
+  }
+  .todo-box h2 {
+    color: var(--warm);
+  }
+  .todo-box p:last-child {
+    margin: 0;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 1rem;
+  }
+  .gallery.stack {
+    grid-template-columns: minmax(0, 1fr);
   }
   figure {
     margin: 0;
   }
-  .gallery.stack {
-    flex-direction: column;
-    max-width: 1100px;
-    margin-inline: auto;
-    gap: 2rem;
+  .frame {
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--img-bg);
+    aspect-ratio: 4 / 3;
   }
   .stack .frame {
     aspect-ratio: auto;
-    border-color: var(--line-strong);
-  }
-  .stack .frame :global(img) {
-    height: auto;
-  }
-  .frame {
-    border-radius: var(--radius);
-    aspect-ratio: var(--ar);
-    overflow: hidden;
   }
   .frame :global(img) {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+  }
+  .stack .frame :global(img) {
+    height: auto;
   }
   figcaption {
     margin-top: 0.5rem;
@@ -210,19 +531,19 @@ const num = String(data.order).padStart(2, '0');
   .tag {
     color: var(--accent);
   }
-  .stack figcaption {
-    text-align: center;
+  .note {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--muted);
   }
-  /* Phone clips are portrait: a centred row at one height, never wider than the page. */
   .motion {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 1rem;
-    margin-top: 2.5rem;
+    margin-top: 1.5rem;
   }
   .motion figure {
-    width: min(100%, calc(clamp(320px, 70vh, 640px) * 9 / 16));
+    width: min(100%, 300px);
   }
   .motion video {
     display: block;
@@ -232,90 +553,50 @@ const num = String(data.order).padStart(2, '0');
     border-radius: var(--radius);
     background: var(--img-bg);
   }
-  .note {
-    font-size: 0.85rem;
-    font-style: italic;
-    color: var(--muted);
-  }
   .refs {
     display: grid;
     gap: 0.75rem;
-    max-width: 760px;
-    margin-top: 2.5rem;
   }
-  .cols {
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 2.5rem;
-    margin-top: 3rem;
+
+  .more {
+    margin-top: clamp(4rem, 8vw, 6rem);
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
   }
-  aside {
-    border-right: 1px solid var(--line);
-    padding-right: 2rem;
-  }
-  aside .label:not(:first-child),
-  .main .label:not(:first-child) {
-    margin-top: 2rem;
-  }
-  .cols .label {
-    margin-bottom: 0.5rem;
-  }
-  .objective {
-    color: var(--ink-2);
-    font-size: 1.05rem;
-  }
-  .tools {
-    margin: 0;
-    color: var(--ink-2);
-  }
-  .prose :global(ul),
-  .prose-list {
-    padding-left: 1.1rem;
-    color: var(--ink-2);
-  }
-  .prose :global(li),
-  .prose-list li {
-    margin-block: 0.45rem;
-  }
-  .prose :global(li::marker),
-  .prose-list li::marker {
-    color: var(--accent);
-  }
-  .links {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    margin-top: 1.5rem;
-  }
-  .pager {
+  .more-head {
     display: flex;
     justify-content: space-between;
-    align-items: end;
+    align-items: baseline;
     gap: 1rem;
-    margin-top: 4rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line-strong);
+    margin-bottom: 1.5rem;
   }
-  .pager a {
-    text-decoration: none;
+  .more-head h2 {
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
   }
-  .next {
+  .more-grid {
     display: grid;
-    text-align: right;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
   }
-  .next-title {
-    font: var(--display-weight) 1.4rem/1.2 var(--font-display);
-  }
-  @media (max-width: 800px) {
-    .gallery {
-      flex-direction: column;
-    }
-    .cols {
+
+  @media (max-width: 960px) {
+    .layout {
       grid-template-columns: minmax(0, 1fr);
     }
-    aside {
-      border-right: 0;
-      padding-right: 0;
+    .side {
+      position: static;
+      max-height: none;
+    }
+    .more-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 640px) {
+    .hero {
+      aspect-ratio: 4 / 3;
+    }
+    .more-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

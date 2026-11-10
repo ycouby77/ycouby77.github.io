@@ -4,6 +4,7 @@ import '@fontsource-variable/newsreader/standard-italic.css';
 import '@fontsource/ibm-plex-sans-condensed/400.css';
 import '@fontsource/ibm-plex-sans-condensed/500.css';
 import '../styles/global.css';
+import Logo from '../components/Logo.astro';
 import NightSky from '../components/NightSky.astro';
 import { profile } from '../data/profile';
 
@@ -15,6 +16,7 @@ interface Props {
 const { title, description = profile.intro } = Astro.props;
 const pageTitle = title ? `${title} · ${profile.name}` : `${profile.name} · Mechatronics Engineering Portfolio`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const here = (path: string) => Astro.url.pathname.replace(/\/$/, '') === path;
 ---
 
 <!doctype html>
@@ -22,7 +24,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#07121a" />
+    <meta name="theme-color" content="#060708" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -36,13 +38,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <a class="skip visually-hidden" href="#main">Skip to content</a>
     <header class="site-header">
       <div class="wrap bar">
-        <a href="/" class="brand">Yacoub Derradji</a>
+        <a href="/" class="brand"><Logo /> Yacoub Derradji</a>
         <nav aria-label="Primary">
-          <a href="/#work">Work</a>
+          <a href="/projects" aria-current={here('/projects') ? 'page' : undefined}>Projects</a>
           <a href="/#experience">Experience</a>
-          <a href="/#skills">Skills</a>
-          <a href="/#contact">Contact</a>
-          <a href="/resume">Resume</a>
+          <a href="/about" aria-current={here('/about') ? 'page' : undefined}>About</a>
+          <a href="/resume" aria-current={here('/resume') ? 'page' : undefined}>Resume</a>
+          <a href="/#contact" class="nav-contact">Contact</a>
         </nav>
       </div>
     </header>
@@ -54,18 +56,56 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <footer class="site-footer">
       <div class="wrap bar meta">
         <span>{profile.name}</span>
-        <span>{profile.location}</span>
+        <span data-local-time>{profile.location}</span>
       </div>
     </footer>
   </body>
 </html>
+
+<script>
+  // Footer: current time where I am.
+  const el = document.querySelector<HTMLElement>('[data-local-time]');
+  if (el) {
+    const place = el.textContent?.trim() ?? '';
+    const fmt = new Intl.DateTimeFormat('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' });
+    const tick = () => (el.textContent = `It's ${fmt.format(new Date()).replace(/\./g, '')} in ${place}`);
+    tick();
+    setInterval(tick, 30000);
+  }
+
+  // Photo cards that lean toward the cursor, with a soft highlight. Mouse only.
+  const canTilt =
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (canTilt) {
+    for (const card of document.querySelectorAll<HTMLElement>('[data-tilt]')) {
+      card.addEventListener('pointermove', (e) => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;
+        const y = (e.clientY - r.top) / r.height;
+        // Wide cards tilt less so their far edge doesn't swing too much.
+        const max = Math.min(4, 1600 / r.width);
+        card.classList.add('tilting');
+        card.style.setProperty('--ry', `${(x - 0.5) * 2 * max}deg`);
+        card.style.setProperty('--rx', `${(0.5 - y) * 2 * max}deg`);
+        card.style.setProperty('--gx', `${x * 100}%`);
+        card.style.setProperty('--gy', `${y * 100}%`);
+      });
+      card.addEventListener('pointerleave', () => {
+        card.classList.remove('tilting');
+        card.style.setProperty('--rx', '0deg');
+        card.style.setProperty('--ry', '0deg');
+      });
+    }
+  }
+</script>
 
 <style>
   .site-header {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgb(7 18 26 / 0.55);
+    background: rgb(6 7 8 / 0.55);
     backdrop-filter: blur(10px) saturate(1.2);
     border-bottom: 1px solid var(--line);
   }
@@ -77,16 +117,38 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     min-height: 60px;
   }
   .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     text-decoration: none;
     color: var(--ink);
     font: 400 1.2rem/1 var(--font-display);
     letter-spacing: -0.01em;
+  }
+  .brand :global(.logo) {
+    color: var(--accent);
+    flex: none;
   }
   nav {
     display: flex;
     gap: 1.5rem;
     font-size: 0.98rem;
     margin-left: auto;
+  }
+  nav a[aria-current='page'] {
+    color: var(--accent);
+  }
+  .nav-contact {
+    padding-inline: 0.95rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    min-height: 36px !important;
+  }
+  .nav-contact:hover {
+    border-color: var(--accent);
+  }
+  nav {
+    align-items: center;
   }
   nav a {
     display: inline-flex;
@@ -111,7 +173,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   .site-footer {
     border-top: 1px solid var(--line);
     padding-block: 1.5rem;
-    background: rgb(4 11 18 / 0.6);
+    background: rgb(3 4 4 / 0.6);
   }
   @media (max-width: 640px) {
     nav {
@@ -119,7 +181,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       font-size: 0.9rem;
     }
     nav a:nth-child(2),
-    nav a:nth-child(3) {
+    nav a:nth-child(5) {
       display: none;
     }
     .brand {

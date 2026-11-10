@@ -3,6 +3,9 @@ title: MR Clutch Actuator for a Robotic Hand
 order: 1
 featured: true
 context: ARM Lab research
+role: Undergraduate researcher, led the redesign
+status: Parts being machined
+categories: [Research, Mechanical, Robotics]
 period: May 2026 - Present
 disciplines: [Actuator design, Root-cause analysis, DFM]
 summary: >-
@@ -21,8 +24,8 @@ specs:
   - { label: Parts redesigned, value: '7' }
 results:
   - Both failure modes addressed with a single design change
-  - All 7 parts sourced across five manufacturing platforms; quotes pending approval for order
-  - Design moving to fabrication for the hand prototype
+  - All 7 parts sourced across five manufacturing platforms
+  - Waiting on the machined parts; clutch assembly and testing start once they arrive
 gallery:
   - { src: ./before.png, alt: Side view of the original clutch with a thin keyed shaft, label: Before, caption: 'Ø1 mm shaft, keyed coupling', matte: '#ffffff' }
   - { src: ./after.png, alt: Side view of the redesigned clutch with a thicker D-profile shaft, label: After, caption: 'Ø2 mm D-profile shaft, revised stator', matte: '#ffffff' }

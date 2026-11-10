@@ -2,6 +2,9 @@
 title: Tendon-Driven Robotic Gripper
 order: 5
 context: Personal build
+role: Solo build
+status: Prototype in progress
+categories: [Robotics, Mechanical]
 period: Sept. 2025 - Present
 disciplines: [Prototyping, Grasping]
 summary: >-

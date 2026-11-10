@@ -3,6 +3,9 @@ title: Off-Road RC Vehicle Platform
 order: 3
 featured: true
 context: Personal build
+role: Solo build
+status: Completed · Apr. 2026
+categories: [Mechanical, Embedded, Robotics]
 period: Dec. 2025 - Apr. 2026
 disciplines: [Mechanical design, Embedded systems, Prototyping]
 summary: >-

@@ -19,6 +19,12 @@ const projects = defineCollection({
       featured: z.boolean().default(false),
       // Short context label, e.g. "ARM Lab research" or "Personal build".
       context: z.string(),
+      // "My role" in the project page sidebar, e.g. "Led the redesign".
+      role: z.string().optional(),
+      // Where the project stands, shown as a chip on its card, e.g. "Parts being machined".
+      status: z.string().optional(),
+      // Filter groups on /projects: Robotics, Mechanical, Embedded, Software, Research.
+      categories: z.array(z.enum(['Robotics', 'Mechanical', 'Embedded', 'Software', 'Research'])).default([]),
       period: z.string(),
       disciplines: z.array(z.string()),
       summary: z.string(),
@@ -45,6 +51,8 @@ const projects = defineCollection({
       // Image for the home-page card only, when the case study shouldn't show it
       // (e.g. the flood sim, whose page has the live map instead).
       cover: z.object({ src: image(), alt: z.string() }).optional(),
+      // 'text' gives the project a short text-only card (no image), even if it has a gallery.
+      card: z.enum(['photo', 'text']).default('photo'),
       // Shown under the gallery, e.g. confidentiality notes.
       galleryNote: z.string().optional(),
       // Short silent clips that loop under the gallery. Files live in public/videos/<slug>/.

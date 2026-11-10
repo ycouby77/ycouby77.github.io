@@ -22,7 +22,7 @@ const href = `/projects/${project.id}`;
 ---
 
 <article class={`sheet ${layout}`}>
-  <a class:list={['media', { matted: matte }]} href={href} tabindex="-1" aria-hidden="true" style={matte ? `--matte: ${matte}` : undefined}>
+  <a class:list={['media', { matted: matte }]} href={href} tabindex="-1" aria-hidden="true" data-tilt style={matte ? `--matte: ${matte}` : undefined}>
     {
       cover && (
         <Image

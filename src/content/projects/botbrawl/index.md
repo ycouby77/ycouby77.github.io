@@ -27,7 +27,7 @@ results:
   - The robot is in design. Nothing has been built or tested yet
   - 'Target: built, integrated and tested by around the end of February 2027'
   - 'Competition: May 2027'
-cardImage: { src: ./botbrawl-logo.webp, alt: 'BotBrawl Canada logo: two robots facing each other across a red maple leaf', matte: '#19212e' }
+cover: { src: ./botbrawl-logo.webp, alt: 'BotBrawl Canada logo: two robots facing each other across a red maple leaf', matte: '#19212e' }
 gallery:
   - { src: ./design-meeting.webp, alt: WE First members working on laptops at tables during a combat robotics meeting, label: Team, caption: A WE First combat robotics design meeting. Photo from the club }
   - { src: ./arena-example.webp, alt: Two beetleweight combat robots facing each other inside a BotBrawl arena, label: Example, caption: 'Two 3 lb robots at the 2026 BotBrawl Summer Classic, an example of the competition we are designing for. These robots belong to other teams. Photo: Liam Haddock / BotBrawl Canada' }

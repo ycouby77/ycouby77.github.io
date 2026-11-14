@@ -429,7 +429,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
   .story {
     display: grid;
     gap: clamp(3rem, 6vw, 4.5rem);
-    max-width: 52rem;
+    /* Text runs the full width of the column beside the sidebar. */
   }
   .story section {
     scroll-margin-top: 90px;
@@ -450,15 +450,18 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
     font-size: clamp(1.15rem, 1.8vw, 1.35rem);
     line-height: 1.55;
     color: var(--ink);
+    max-width: none;
   }
   .body {
     color: var(--ink-2);
-    font-size: 1.05rem;
+    font-size: 1.1rem;
+    line-height: 1.7;
     margin: 0 0 1.5rem;
   }
   .prose {
     color: var(--ink-2);
-    font-size: 1.05rem;
+    font-size: 1.1rem;
+    line-height: 1.7;
   }
   .prose :global(h2) {
     scroll-margin-top: 90px;

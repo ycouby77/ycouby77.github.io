@@ -1,0 +1,264 @@
+---
+title: MR Clutch Actuator for a Robotic Hand
+order: 1
+featured: true
+context: ARM Lab research
+role: Undergraduate researcher, led the mechanical redesign
+status: Parts being machined
+categories: [Research, Mechanical, Robotics]
+period: May 2026 - Present
+disciplines: [Actuator design, Failure analysis, DFM]
+summary: >-
+  Dr. Mehrdad Kermani's ARM Lab at Western is developing a fully actuated robotic hand whose finger joints
+  are driven by miniature magnetorheological (MR) clutches, building on the squeeze-mode MR clutch concept
+  published by Sergey Pisetskiy and Mehrdad R. Kermani. The design was stalled on three problems: its 1 mm
+  shaft broke under load, its keyway was too small to be practical to make, and the lab had lost its
+  previous manufacturer. Since May 2026 I have led the mechanical redesign that fixed the first two and
+  found a new supplier, taking it to an approved order.
+objective: >-
+  A shaft that survives the clutch's full torque, parts that a shop can actually machine at watch scale,
+  and a supplier to make them, all inside a clutch small enough for two to sit in one finger joint.
+tools: [SolidWorks, ISO 2768-m drawings, Tolerancing, DFM, Vendor sourcing]
+specs:
+  - { label: Shaft, value: Ø1 → Ø2 mm }
+  - { label: Coupling, value: Keyway → D-profile }
+  - { label: Envelope, value: 'About Ø20 × 10 mm' }
+  - { label: Gears, value: 0.25 module }
+  - { label: Drawing std., value: ISO 2768-m }
+  - { label: Parts redesigned, value: '7' }
+results:
+  - Five clutch sets are on order. The standard hardware has arrived and the machined parts are expected around December 2026
+  - Nothing has been assembled or tested yet
+  - 'Next: inspect the parts, dry fit, assemble, then measure torque using a prototype finger as the lever arm'
+cover: { src: ./media/hero.png, alt: Side view of the redesigned clutch with its thicker shaft, matte: '#ffffff' }
+cardImage: { src: ./media/card.png, alt: Cut-away view of the original clutch showing the gears, coil and shaft inside, matte: '#ffffff' }
+gallery:
+  - { src: ./after.png, alt: Side view of the redesigned clutch with a thicker D-profile shaft, label: After, caption: 'Ø2 mm D-profile shaft, revised stator', matte: '#ffffff' }
+  - { src: ./before.png, alt: Side view of the original clutch with a thin keyed shaft, label: Before, caption: 'Ø1 mm shaft, keyed coupling', matte: '#ffffff' }
+  - { src: ./output-side.png, alt: Three-quarter view of the redesigned clutch output side, label: Redesign, caption: Output side, matte: '#ffffff' }
+galleryNote: All images are my own renders from the lab's CAD. Cross-sections show the original 2020 design only. The redesign's internal geometry is left out because the lab's research is ongoing.
+references:
+  - title: A Concept of a Miniaturized MR Clutch Utilizing MR Fluid in Squeeze Mode
+    authors: Sergey Pisetskiy and Mehrdad R. Kermani
+    venue: IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+    year: 2020
+    url: https://doi.org/10.1109/IROS45743.2020.9341643
+    note: Introduces a miniaturized MR clutch that uses a set of gears to work the MR fluid in squeeze mode, aimed at compact robotic joints such as gripper fingers. My redesign builds on this concept.
+    image: ./output-side.png
+---
+
+import Figure from '../../../components/Figure.astro';
+import TorqueChart from '../../../components/TorqueChart.astro';
+import newIso from './media/pairs/new_iso.png';
+import newFront from './media/pairs/new_front.png';
+import newBack from './media/pairs/new_back.png';
+import oldIso from './media/pairs/old_iso.png';
+import oldFront from './media/pairs/old_front.png';
+import oldBack from './media/pairs/old_back.png';
+import section1 from './media/section_view.png';
+import section2 from './media/section_view2.png';
+import compareShaft from './media/compare_shaft.png';
+import compareSunGear from './media/compare_sun_gear.png';
+
+I led the mechanical redesign. Sergey Pisetskiy, the original designer, reviewed and approved each change, and Dr. Kermani supervised. Sergey also suggested the D-profile coupling, set the shaft strength requirement and pointed me to cheaper sources for the standard hardware. Moving the coil was my proposal.
+
+## How the clutch works
+
+An MR clutch transmits torque through magnetorheological fluid, an oil filled with tiny iron particles that thickens almost instantly in a magnetic field. Most MR clutches shear this fluid between spinning disks. The ARM Lab's design, from Pisetskiy and Kermani in 2020, instead uses a small planetary gear set submerged in the fluid. As the gear teeth mesh they squeeze the fluid, which at this scale can produce more force than shearing. A coil around the gears sets the field strength, so the current in the coil sets how much torque gets through. That makes the torque electrically adjustable and physically capped, which suits a robotic finger that has to grip firmly without crushing. The whole clutch fits in roughly a 20 mm diameter, 10 mm wide package, so two can sit in one finger joint and work against each other.
+
+<Figure
+  src={section2}
+  alt="Flat cross-section of the original clutch, showing the shaft running through the bearing, seal, sun gear and brass lid, with the coil in the stator"
+  caption="Cross-section of the original 2020 design."
+  labels={[
+    { text: 'Planet gear', at: [190, 170], to: [365, 232], side: 'left' },
+    { text: 'Sun gear', at: [190, 250], to: [362, 300], side: 'left' },
+    { text: 'Brass lid', at: [190, 420], to: [300, 372], side: 'left' },
+    { text: 'Shaft seal (O-ring)', at: [190, 520], to: [424, 398], side: 'left' },
+    { text: 'Stator', at: [640, 150], to: [440, 130], side: 'right' },
+    { text: 'Coil', at: [640, 215], to: [430, 220], side: 'right' },
+    { text: 'Input shaft', at: [680, 300], to: [680, 354], side: 'top' },
+    { text: 'Bearing', at: [640, 470], to: [472, 394], side: 'right' },
+    { text: 'Bearing holder', at: [640, 540], to: [492, 440], side: 'right' },
+  ]}
+/>
+<Figure
+  src={section1}
+  alt="Angled cut-away of the original clutch showing the same parts in three dimensions"
+  caption="A second cross-section of the original design."
+  labels={[
+    { text: 'Planet gear', at: [230, 160], to: [430, 228], side: 'left' },
+    { text: 'Sun gear', at: [230, 230], to: [425, 300], side: 'left' },
+    { text: 'Brass lid', at: [230, 330], to: [388, 300], side: 'left' },
+    { text: 'Shaft seal (O-ring)', at: [230, 480], to: [478, 398], side: 'left' },
+    { text: 'Stator', at: [720, 130], to: [545, 150], side: 'right' },
+    { text: 'Coil', at: [720, 215], to: [478, 212], side: 'right' },
+    { text: 'Input shaft', at: [700, 320], to: [700, 384], side: 'top' },
+  ]}
+/>
+
+
+<TorqueChart
+  currents={[0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6]}
+  series={[
+    { name: '2 planet gears', values: [0.9, 1.3, 1.9, 2.5, 3.2, 3.6, 4.6, 4.9, 5.7, 6.7, 6.8, 8.2, 8.8, 9.8, 9.9, 12.0, 12.9, 15.3, 16.5] },
+    { name: '3 planet gears', values: [2.0, 2.4, 3.4, 4.6, 5.4, 6.5, 7.6, 8.5, 9.9, 10.4, 12.0, 12.8, 14.0, 14.6, 16.7, 18.0, 18.7, 19.8, 21.8] },
+  ]}
+  caption="Torque results from the original 2020 prototype, replotted from Pisetskiy & Kermani (IROS 2020). The values are read from the published figure. My redesign targets the same torque per planet gear, on a shaft strong enough to run more planet gears."
+>
+Source: S. Pisetskiy and M. R. Kermani, "A Concept of a Miniaturized MR Clutch Utilizing MR Fluid in Squeeze Mode," 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Las Vegas, NV, USA, 2020, pp. 6347-6352, [doi: 10.1109/IROS45743.2020.9341643](https://doi.org/10.1109/IROS45743.2020.9341643).
+</TorqueChart>
+
+## Understanding the failure
+
+The input shaft had fractured in torsion, the sun gear was keyed to the shaft with a key that had to be filed by hand, and there was no manufacturer. In SolidWorks I traced every feature along the shaft's torque path that reduces its cross-section: the keyway, four E-clip grooves and the shoulders.
+
+A rough hand calculation explained the break. A shaft's torsional capacity scales with its diameter cubed, the grooves necked the 1 mm shaft down further, and a sharp groove roughly doubles the local stress. The old shaft was also very hard but brittle, which makes it sensitive to notches. I haven't been able to confirm exactly where it broke, so I don't claim a single root cause.
+
+## Choosing the shaft size
+
+I looked at 1.5 mm, 2 mm and 3 mm. In the plain section, 2 mm gives about eight times the torsional capacity of 1 mm, and my estimate kept the stress below the yield of ordinary stainless steel even at the worst-case load with a sharp groove. 1.5 mm was borderline and 3 mm was more than needed.
+
+<Figure
+  src={compareShaft}
+  alt="Two shafts side by side: a thin shaft with a key slot at its end, and a thicker shaft with a flat D-shaped end"
+  caption="Left: the original 1 mm shaft, which broke under load. Right: my 2 mm shaft, with a D-profile in place of the hand-filed key."
+  labels={[
+    { text: 'Original: 1 mm shaft', at: [400, 190], to: [560, 300], side: 'left' },
+    { text: 'Key slot', at: [170, 400], to: [285, 465], side: 'left' },
+    { text: 'New: 2 mm shaft', at: [1000, 420], to: [880, 300], side: 'right' },
+    { text: 'D-profile flat', at: [700, 650], to: [560, 490], side: 'right' },
+  ]}
+/>
+
+There was room for it because the old shaft size had been set by its bearing, not by the gears: the sun gear hub had plenty of material for a larger bore. The new shaft still has E-clip grooves, so the gain at the grooves is smaller than eight times, but it is still a large improvement.
+
+## Choosing the shaft material
+
+The old shaft failed partly because it was brittle, so I wanted strength combined with toughness, not maximum hardness. I compared stainless, alloy and tool steels. Tool steels trade toughness for hardness, which is the wrong direction for a grooved shaft, and the candidates I preferred are ferromagnetic, so they don't change the magnetic circuit. On Sergey's suggestion the shaft was specified by a minimum yield strength of 1000 MPa with a preferred alloy named, which gives vendors some flexibility.
+
+## Replacing the keyway with a D-profile
+
+For coupling the shaft to the sun gear I considered a one-piece shaft and gear, a press fit with retaining compound, a polygon profile and a D-profile. A one-piece part would be stronger but needs wire EDM and costs more. We went with the D-profile on Sergey's suggestion: it is simple to machine, needs no fitting by hand and removes the key. I toleranced the two flats one-sided so the pair always assembles with clearance. A D-flat still concentrates stress, but much less than a sharp keyway.
+
+<Figure
+  src={compareSunGear}
+  alt="Two sun gears side by side with identical teeth: one with a small keyed bore, one with a larger D-shaped bore"
+  caption="Left: the original sun gear with a keyed bore. Right: the new sun gear with a D-bore that matches the new shaft. The teeth are unchanged."
+  labels={[
+    { text: 'Keyed bore (original)', at: [200, 110], to: [402, 408], side: 'top' },
+    { text: 'D-bore (new)', at: [1250, 110], to: [1005, 428], side: 'top' },
+    { text: 'Teeth unchanged', at: [735, 690], to: [[600, 545], [845, 560]], side: 'bottom' },
+  ]}
+/>
+
+## Standard hardware first
+
+I sized the bearing, E-clips and O-rings for the 2 mm shaft before touching the custom parts, since the bearing bore is what sets the shaft size. I specified them against a standard industrial catalogue and then matched each part, spec for spec, from cheaper suppliers at a fraction of the cost. I accepted a chrome-steel bearing over stainless because the O-rings keep the MR fluid away from it. In review I corrected one O-ring size and the screw count: 16 M1 screws per clutch, four of them for mounting.
+
+## Packaging and the coil move
+
+The larger bearing and its holder thinned the wall around one lid screw below what could be machined, and moving the screw outward would have cut into the coil. The options were to shrink the shaft or move the coil. At one point I was ready to fall back to a smaller shaft, but I proposed moving the coil outward instead, with the same number of turns, the same wire and the same cross-section, and Sergey approved it. I reshaped the chamfer above the coil so the steel over it kept its original thickness.
+
+The reasoning was done by hand, not by simulation. At a constant current, the coil's magnetizing force (turns times current) doesn't depend on its radius; the cost is slightly more resistance and inductance. The steel also runs well below saturation, at about 0.2 to 0.6 T in the paper against roughly 1.5 to 2 T, and the fluid gap dominates the magnetic circuit. The magnetic model has not been rerun on the new geometry, which is a known open risk.
+
+## Redesigning the seven parts
+
+The seven redesigned parts are the shaft, stator, lid, sun gear, sealing lid, sliding lid and bearing holder. I reworked wall thicknesses and screw positions until every feature could be machined, and added mounting holes on the stator face so the clutch can be fixed into a finger. The ring and planet gears were not remade. The redesign didn't change them, so they are reused from the lab's older clutches and only the sun gear is new.
+
+<div class="fig-row">
+<Figure
+  src={oldIso}
+  alt="The original clutch seen from the shaft side: a grey disc-shaped stator with a thin shaft and a brass lid behind"
+  caption="The original 2020 miniaturized MR clutch."
+  labels={[
+    { text: 'Brass lid', at: [279, 160], to: [391, 230], side: 'left' },
+    { text: 'Stator', at: [250, 617], to: [386, 510], side: 'left' },
+    { text: 'Input shaft', at: [765, 413], to: [660, 481], side: 'right' },
+  ]}
+/>
+<Figure
+  src={newIso}
+  alt="The redesigned clutch seen from the shaft side: the same grey stator with a visibly thicker shaft"
+  caption="My redesigned clutch, now in fabrication."
+  labels={[
+    { text: 'Brass lid', at: [264, 203], to: [361, 279], side: 'left' },
+    { text: 'Stator', at: [255, 610], to: [366, 526], side: 'left' },
+    { text: 'Input shaft', at: [791, 416], to: [675, 490], side: 'right' },
+  ]}
+/>
+</div>
+
+<div class="fig-row">
+<Figure
+  src={oldFront}
+  alt="Front face of the original clutch with four screws around a small shaft"
+  caption="Original clutch, front view."
+  labels={[
+    { text: 'Screws', at: [790, 257], to: [539, 336], side: 'right' },
+    { text: 'Input shaft', at: [790, 375], to: [503, 375], side: 'right' },
+    { text: 'Stator', at: [790, 542], to: [606, 483], side: 'right' },
+  ]}
+/>
+<Figure
+  src={newFront}
+  alt="Front face of the redesigned clutch with four screws around a larger shaft"
+  caption="Redesigned clutch, front view."
+  labels={[
+    { text: 'Screws', at: [832, 229], to: [552, 323], side: 'right' },
+    { text: 'Input shaft', at: [832, 373], to: [503, 373], side: 'right' },
+    { text: 'Stator', at: [832, 584], to: [610, 513], side: 'right' },
+  ]}
+/>
+</div>
+
+<div class="fig-row">
+<Figure
+  src={oldBack}
+  alt="Back face of the original clutch: a brass lid held by six screws"
+  caption="Original clutch, back view."
+  labels={[
+    { text: 'Screws', at: [836, 139], to: [606, 196], side: 'right' },
+    { text: 'Brass lid', at: [846, 592], to: [594, 462], side: 'right' },
+  ]}
+/>
+<Figure
+  src={newBack}
+  alt="Back face of the redesigned clutch: a brass lid with eight fasteners around its edge"
+  caption="Redesigned clutch, back view."
+  labels={[
+    { text: 'Screws', at: [813, 174], to: [647, 230], side: 'right' },
+    { text: 'Brass lid', at: [804, 591], to: [618, 466], side: 'right' },
+  ]}
+/>
+</div>
+
+## Drawings and tolerancing
+
+I replaced the inherited tolerance table with ISO 2768-m and added explicit tolerances only for features too small for the standard and for mating fits. Next to rotating parts I made tolerances one-sided toward clearance. Besides the seven part drawings I made gear drawings and an assembly drawing the vendor asked for.
+
+Review caught real errors. The bearing seat in the stator was drawn with the wrong fit, and in a design with only one bearing that bore centres the whole shaft. A deburr callout was large enough to damage the small grooves. I confirmed the sun gear's pressure angle from its base circle instead of assuming it, and stated zero profile shift explicitly on the gear drawings so a shop wouldn't change it. A final pre-order review caught part interferences, E-clip stack-ups, threads bottoming out and a missing callout.
+
+## Finding a supplier
+
+The parts fall into two manufacturing worlds, precision micro-machined structural parts and fine gear cutting, with 0.25 module teeth and M1 threads. A general CNC shop had earlier dropped the job, so I targeted micro-machining shops, looking for ones that serve the medical, dental and optical industries as a sign they could hold the precision.
+
+I worked through about eight sources. One review passed only two of the seven parts, and a specialist micro-parts quote was far too expensive for samples. I ended up with four formal quotes for the full set and compared them in a normalized one-page document. Dr. Kermani, Sergey and I settled on a vendor, and I sent the final drawings and order request and connected the vendor with the department's procurement.
+
+Along the way I standardized vendor outreach into short numbered questions, starting with whether they can cut gears and work carbon steel. I held back the 3D files until a vendor committed, described the parts generically, and got one price that looked like a currency mistake confirmed in writing before it was used.
+
+## What's next
+
+- **Inspect.** Check each part against its drawing, starting with the mating fits.
+- **Dry fit.** Assemble without fluid first and turn the shaft by hand, to check that the new sun gear meshes with the reused ring and planet gears without binding. Reordering those gears is the fallback.
+- **Assemble.** Bond the bearing and ring gear, seal the coil cutout so fluid can't reach the coil, fit the O-rings, close the lids and fill with MR fluid.
+- **Torque test.** Dr. Kermani suggested using a prototype robotic finger as the lever arm, so the test rig is also the first version of the finger the clutch is meant for. My plan is to follow the method in the paper: step the coil current up, measure the transmitted torque at each step and compare the curve with the published results. A matching curve would also show the coil move didn't cost torque.
+- **Two-joint finger.** After the torque tests, four clutches go into one finger as two antagonistic pairs driving two joints.
+- **Later.** A current driver board for the clutch coils, then control software.
+
+## What I learned
+
+- A larger diameter bought far more strength than any material change could, because capacity scales with diameter cubed. After that, the material only had to protect the gain.
+- Only send vendors the files they need to quote. Early on I sent one vendor more files and project context than necessary, and Sergey pointed that out.
+- I'd search the large overseas manufacturing marketplaces sooner, because of how many shops are there.
+- Most of my design decisions held up. Where the design got better in review, it was usually because of options I didn't know about yet.

@@ -12,6 +12,8 @@
     "check:floodsim": "node --experimental-strip-types scripts/check-floodsim.ts"
   },
   "dependencies": {
+    "@astrojs/markdown-satteri": "^0.4.10",
+    "@astrojs/mdx": "^8.1.6",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@fontsource-variable/newsreader": "^5.3.0",

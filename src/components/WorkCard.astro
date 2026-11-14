@@ -12,7 +12,7 @@ interface Props {
 }
 const { project, wide = false, eager = false } = Astro.props;
 const { data } = project;
-const pic = data.card === 'text' ? undefined : (data.cover ?? data.gallery[0]);
+const pic = data.card === 'text' ? undefined : (data.cardImage ?? data.cover ?? data.gallery[0]);
 const matte = pic && 'matte' in pic ? pic.matte : undefined;
 const href = `/projects/${project.id}`;
 ---

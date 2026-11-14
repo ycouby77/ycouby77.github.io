@@ -77,9 +77,9 @@ export const experience: Role[] = [
     location: 'London, ON',
     project: 'mr-clutch-actuator',
     points: [
-      'Redesigned a miniaturized planetary-gear MR clutch used as a per-joint actuator in a fully actuated multi-finger robotic hand',
-      'Traced a torsional shaft fracture and an unmanufacturable keyway to a shared root cause; fixed both by upsizing the shaft to 2 mm and implementing a D-profile shaft/bore coupling',
-      'Produced the 7-drawing SolidWorks manufacturing set under ISO 2768-m and sourced all 7 parts across five manufacturing platforms',
+      'Led the mechanical redesign of a miniature MR clutch that drives the finger joints of a fully actuated robotic hand, taking a stalled design to an approved order',
+      'Fixed a shaft that fractured in torsion and a keyway too small to machine by upsizing the shaft from 1 mm to 2 mm, backed by a hand calculation, and switching to a D-profile shaft and bore',
+      'Redesigned 7 machined parts and produced their SolidWorks drawings under ISO 2768-m; worked through about 8 suppliers and compared four formal quotes to find a shop for watch-scale parts',
     ],
   },
   {

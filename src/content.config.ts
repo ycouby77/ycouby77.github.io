@@ -6,7 +6,7 @@ import { z } from 'astro/zod';
 // The folder name becomes the URL: /projects/<slug>.
 const projects = defineCollection({
   loader: glob({
-    pattern: '*/index.md',
+    pattern: '*/index.{md,mdx}',
     base: './src/content/projects',
     generateId: ({ entry }) => entry.split('/')[0],
   }),
@@ -50,7 +50,9 @@ const projects = defineCollection({
       galleryLayout: z.enum(['grid', 'stack']).default('grid'),
       // Image for the home-page card only, when the case study shouldn't show it
       // (e.g. the flood sim, whose page has the live map instead).
-      cover: z.object({ src: image(), alt: z.string() }).optional(),
+      cover: z.object({ src: image(), alt: z.string(), matte: z.string().optional() }).optional(),
+      // Image for project cards only, when the page's top image isn't the best thumbnail.
+      cardImage: z.object({ src: image(), alt: z.string(), matte: z.string().optional() }).optional(),
       // 'text' gives the project a short text-only card (no image), even if it has a gallery.
       card: z.enum(['photo', 'text']).default('photo'),
       // Shown under the gallery, e.g. confidentiality notes.

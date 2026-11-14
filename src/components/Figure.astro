@@ -1,0 +1,162 @@
+---
+// A captioned image for project pages, with optional callout labels.
+// Labels are an HTML/SVG overlay: the image file itself is never edited.
+//
+// Each label: { text, at: [x, y], to: [x, y] | [[x, y], ...], side }
+//   at   = where the leader line leaves the label, in image pixels
+//   to   = the point(s) on the part the line ends on, in image pixels
+//   side = where the label box sits relative to `at`: 'left' | 'right' | 'top' | 'bottom'
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+type Pt = [number, number];
+interface Label {
+  text: string;
+  at: Pt;
+  to: Pt | Pt[];
+  side?: 'left' | 'right' | 'top' | 'bottom';
+}
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  caption?: string;
+  labels?: Label[];
+}
+const { src, alt, caption, labels = [] } = Astro.props;
+const pct = (v: number, total: number) => `${((v / total) * 100).toFixed(2)}%`;
+const targets = (l: Label): Pt[] => (Array.isArray(l.to[0]) ? (l.to as Pt[]) : [l.to as Pt]);
+---
+
+<figure class="fig">
+  <div class="fig-frame">
+    <Image src={src} alt={alt} widths={[500, 900, 1400]} sizes="(max-width: 960px) 100vw, 60vw" quality={90} />
+    {
+      labels.length > 0 && (
+        <>
+          <svg class="fig-lines" viewBox={`0 0 ${src.width} ${src.height}`} preserveAspectRatio="none" aria-hidden="true">
+            {labels.flatMap((l) => targets(l).map((t) => <line x1={l.at[0]} y1={l.at[1]} x2={t[0]} y2={t[1]} />))}
+          </svg>
+          {labels.flatMap((l) => targets(l).map((t) => <span class="fig-dot" style={`left:${pct(t[0], src.width)};top:${pct(t[1], src.height)}`} />))}
+          {labels.map((l) => (
+            <span class:list={['fig-label', l.side ?? 'right']} style={`left:${pct(l.at[0], src.width)};top:${pct(l.at[1], src.height)}`}>
+              {l.text}
+            </span>
+          ))}
+        </>
+      )
+    }
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style is:global>
+  .fig {
+    margin: 1.75rem 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .fig-frame {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: #fff;
+    line-height: 0;
+  }
+  .fig-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .fig-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .fig-lines line {
+    stroke: #14191d;
+    stroke-width: 1.25;
+    vector-effect: non-scaling-stroke;
+  }
+  .fig-dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: #14191d;
+  }
+  .fig-label {
+    position: absolute;
+    padding: 0.18rem 0.45rem;
+    border: 1px solid #14191d;
+    border-radius: 3px;
+    background: rgb(255 255 255 / 0.94);
+    color: #14191d;
+    font: 500 0.78rem/1.25 system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    white-space: nowrap;
+  }
+  .fig-label.right {
+    transform: translate(0, -50%);
+  }
+  .fig-label.left {
+    transform: translate(-100%, -50%);
+  }
+  .fig-label.top {
+    transform: translate(-50%, -100%);
+  }
+  .fig-label.bottom {
+    transform: translate(-50%, 0);
+  }
+  .fig figcaption {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  /* Two figures side by side (e.g. original vs redesign). */
+  .fig-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 1.75rem 0;
+  }
+  .fig-row .fig {
+    margin: 0;
+    align-content: start;
+  }
+  @media (max-width: 1100px) {
+    .fig-label {
+      font-size: 0.68rem;
+      padding: 0.1rem 0.3rem;
+    }
+  }
+  @media (max-width: 700px) {
+    .fig-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .fig-label {
+      font-size: 0.62rem;
+    }
+  }
+</style>
+
+<script>
+  // Keep callout labels inside their image on narrow screens: nudge any label that
+  // would run past the frame edge back in. The leader line still ends on the part.
+  function fitLabels() {
+    document.querySelectorAll<HTMLElement>('.fig-frame').forEach((frame) => {
+      const box = frame.getBoundingClientRect();
+      frame.querySelectorAll<HTMLElement>('.fig-label').forEach((label) => {
+        label.style.marginLeft = '0px';
+        const r = label.getBoundingClientRect();
+        const pad = 4;
+        if (r.left < box.left + pad) label.style.marginLeft = `${box.left + pad - r.left}px`;
+        else if (r.right > box.right - pad) label.style.marginLeft = `${box.right - pad - r.right}px`;
+      });
+    });
+  }
+  fitLabels();
+  window.addEventListener('resize', fitLabels);
+  window.addEventListener('load', fitLabels);
+</script>

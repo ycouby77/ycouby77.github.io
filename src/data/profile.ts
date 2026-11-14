@@ -117,7 +117,11 @@ export const leadership: Role[] = [
     status: 'Current',
     period: 'Aug. 2026 - Present',
     location: 'London, ON',
-    points: ["Lead mechanical design and build of the club's combat robot for the 2026-27 BotBrawl season, organizing the mechanical sub-team"],
+    points: [
+      'Mechanical lead and chassis and drivetrain lead for a 3 lb beetleweight combat robot, on a team of about 12, building toward a competition in May 2027',
+      "Designed the robot's cast polyurethane wheels; hand out research and CAD tasks, coordinate between subsystems and advise members on what is feasible",
+      'Team design so far: a horizontal spinner mounted mid-robot, sloped armor on the sides and back, and an invertible drive that keeps working if the robot is flipped',
+    ],
   },
   {
     id: 'we-first',

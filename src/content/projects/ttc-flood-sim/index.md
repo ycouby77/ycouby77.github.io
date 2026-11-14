@@ -2,6 +2,7 @@
 title: TTC Flood Rerouting Simulation
 order: 4
 context: ES 1050 course project
+role: Wrote the original program, directed the 2026 rebuild
 status: Completed · interactive demo
 categories: [Software]
 period: Winter 2025, rebuilt 2026
@@ -29,9 +30,19 @@ links:
   - { label: View the code on GitHub, href: 'https://github.com/ycouby77/ttc-flood-sim' }
 ---
 
-**2025 prototype (team project).** We parsed the TTC's GTFS schedule data to get the stop sequence for the 504 King, pulled Toronto's road network from OpenStreetMap, removed roads near a flooded stop, and plotted the original and rerouted paths on an interactive map.
+I wrote all the code for the original program, with help from ChatGPT. My four teammates didn't code and focused on the rest of the project. The 2026 browser version was built with Claude Code under my direction.
 
-**2026 rebuild.** The prototype was rebuilt as a tested Python package and ported to the browser for this page:
+## Picking the problem
+
+ES 1050 gave every team the same theme, floods or fires, and we had to find a problem inside it to solve. We chose rerouting TTC transit when a stop floods.
+
+## The original simulation
+
+The original program was written in Python and covered two or three streets. You picked any stop on them, the program treated that stop as flooded, and it gave a reroute. It read the TTC's GTFS schedule data to get the stop sequence, pulled the road network from OpenStreetMap, removed roads near the flooded stop, and plotted the original and rerouted paths on a map.
+
+## The 2026 rebuild
+
+In 2026 the prototype was rebuilt as a tested Python package and ported to the browser for this page:
 
 - Roads are cut when their actual centreline enters the flood zone, not just when an endpoint does, so long blocks through the flood are caught
 - The street network stays directed, so detours respect one-way streets

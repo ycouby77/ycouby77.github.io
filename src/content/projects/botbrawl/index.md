@@ -1,5 +1,6 @@
 ---
 title: BotBrawl Combat Robot
+ongoing: true
 order: 1.5
 context: WE First Club
 role: Mechanical lead, chassis and drivetrain lead

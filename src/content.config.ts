@@ -17,6 +17,8 @@ const projects = defineCollection({
       order: z.number(),
       // Featured projects get a full case-study card; the rest are listed compactly.
       featured: z.boolean().default(false),
+      // Ongoing projects are listed first, under their own heading; the rest are "Past projects".
+      ongoing: z.boolean().default(false),
       // Short context label, e.g. "ARM Lab research" or "Personal build".
       context: z.string(),
       // "My role" in the project page sidebar, e.g. "Led the redesign".
@@ -27,7 +29,12 @@ const projects = defineCollection({
       categories: z.array(z.enum(['Robotics', 'Mechanical', 'Embedded', 'Software', 'Research'])).default([]),
       period: z.string(),
       disciplines: z.array(z.string()),
+      // Opening text of the project page. Line breaks in it start new paragraphs.
       summary: z.string(),
+      // Search/social description, when the summary is too long for one.
+      description: z.string().optional(),
+      // "Keep exploring": project slugs to show, in order. Defaults to the next three by order.
+      related: z.array(z.string()).optional(),
       objective: z.string().optional(),
       tools: z.array(z.string()).default([]),
       // Key/value rows rendered as a spec table / drawing title block.

@@ -1,0 +1,325 @@
+---
+// Interactive project timeline: phase bars and milestone ticks on a month axis, a "today"
+// line, and a row of milestone buttons. Picking a phase or milestone shows its details.
+// Dates are 'YYYY-MM-DD'. Anything ending before `asOf` counts as done.
+interface Phase {
+  label: string; // short text on the bar
+  title: string;
+  start: string;
+  end: string;
+  when: string; // human-readable dates for the detail panel
+  text: string;
+}
+interface Milestone {
+  date: string;
+  title: string;
+  text: string;
+}
+interface Props {
+  start: string;
+  end: string;
+  asOf: string;
+  phases: Phase[];
+  milestones: Milestone[];
+  // Shaded strip under the phases, e.g. an expected overrun.
+  spill?: { start: string; end: string; label: string };
+  caption?: string;
+}
+const { start, end, asOf, phases, milestones, spill, caption } = Astro.props;
+
+const day = (d: string) => Date.parse(`${d}T00:00:00Z`) / 86_400_000;
+const t0 = day(start);
+const span = day(end) - t0;
+const pct = (d: string) => `${(((day(d) - t0) / span) * 100).toFixed(3)}%`;
+const width = (a: string, b: string) => `${(((day(b) - day(a) + 1) / span) * 100).toFixed(3)}%`;
+const now = day(asOf);
+type Status = 'done' | 'current' | 'planned';
+const statusOf = (a: string, b: string): Status => (day(b) < now ? 'done' : day(a) <= now ? 'current' : 'planned');
+const statusText = { done: 'Done', current: 'In progress', planned: 'Planned' } as const;
+
+const months: string[] = [];
+for (let d = new Date(`${start}T00:00:00Z`); d.getTime() / 86_400_000 < day(end); d.setUTCMonth(d.getUTCMonth() + 1)) {
+  months.push(d.toISOString().slice(0, 10));
+}
+const monthName = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+const short = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' }).replace('.', '');
+
+const items = [
+  ...phases.map((p, i) => ({ id: `p${i}`, kind: 'phase', status: statusOf(p.start, p.end), when: p.when, title: p.title, text: p.text })),
+  ...milestones.map((m, i) => ({ id: `m${i}`, kind: 'milestone', status: statusOf(m.date, m.date), when: short(m.date), title: m.title, text: m.text })),
+];
+// Start on the latest finished milestone.
+const doneMs = milestones.map((m, i) => ({ m, i })).filter(({ m }) => day(m.date) < now);
+const initial = items.find((it) => it.id === `m${doneMs.length ? doneMs[doneMs.length - 1].i : 0}`)!;
+---
+
+<figure class="rm" data-roadmap>
+  <div class="rm-scroll">
+    <div class="rm-track">
+      <div class="rm-months" aria-hidden="true">
+        {months.map((m) => <span style={`left:${pct(m)}`}>{monthName(m)}</span>)}
+      </div>
+      <div class="rm-phases">
+        {
+          phases.map((p, i) => (
+            <button
+              type="button"
+              class:list={['rm-phase', statusOf(p.start, p.end)]}
+              style={`left:${pct(p.start)};width:${width(p.start, p.end)}`}
+              data-rm-item={`p${i}`}
+              aria-pressed={`p${i}` === initial.id ? 'true' : 'false'}
+              title={p.title}
+            >
+              {p.label}
+            </button>
+          ))
+        }
+      </div>
+      {spill && <div class="rm-spill" style={`left:${pct(spill.start)};width:${width(spill.start, spill.end)}`} title={spill.label} />}
+      <div class="rm-ticks" aria-hidden="true">
+        {milestones.map((m, i) => <span class:list={['rm-tick', statusOf(m.date, m.date)]} style={`left:${pct(m.date)}`} data-rm-tick={`m${i}`} />)}
+      </div>
+      <div class="rm-today" style={`left:${pct(asOf)}`} aria-hidden="true">
+        <span>Today, {short(asOf)}</span>
+      </div>
+    </div>
+  </div>
+
+  <ol class="rm-steps" aria-label="Milestones">
+    {
+      milestones.map((m, i) => (
+        <li>
+          <button type="button" class:list={['rm-step', statusOf(m.date, m.date)]} data-rm-item={`m${i}`} aria-pressed={`m${i}` === initial.id ? 'true' : 'false'}>
+            <span class="rm-date">{short(m.date)}</span>
+            <span class="rm-name">{m.title}</span>
+          </button>
+        </li>
+      ))
+    }
+  </ol>
+
+  <div class="rm-detail" aria-live="polite">
+    <p class="rm-meta">
+      <span data-rm-when>{initial.when}</span> · <span data-rm-status class:list={['rm-status', initial.status]}>{statusText[initial.status]}</span>
+    </p>
+    <h4 data-rm-title>{initial.title}</h4>
+    <p data-rm-text>{initial.text}</p>
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+
+  <script type="application/json" data-rm-data set:html={JSON.stringify(items.map((it) => ({ ...it, statusText: statusText[it.status] })))} />
+</figure>
+
+<script>
+  type Item = { id: string; when: string; title: string; text: string; status: string; statusText: string };
+  document.querySelectorAll<HTMLElement>('[data-roadmap]').forEach((root) => {
+    const items: Item[] = JSON.parse(root.querySelector('[data-rm-data]')!.textContent!);
+    const byId = new Map(items.map((it) => [it.id, it]));
+    const q = (sel: string) => root.querySelector<HTMLElement>(sel)!;
+    const select = (id: string) => {
+      const it = byId.get(id);
+      if (!it) return;
+      root.querySelectorAll<HTMLElement>('[data-rm-item]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.rmItem === id)));
+      root.querySelectorAll<HTMLElement>('[data-rm-tick]').forEach((t) => t.classList.toggle('selected', t.dataset.rmTick === id));
+      q('[data-rm-when]').textContent = it.when;
+      const status = q('[data-rm-status]');
+      status.textContent = it.statusText;
+      status.className = `rm-status ${it.status}`;
+      q('[data-rm-title]').textContent = it.title;
+      q('[data-rm-text]').textContent = it.text;
+    };
+    root.querySelectorAll<HTMLElement>('[data-rm-item]').forEach((b) => b.addEventListener('click', () => select(b.dataset.rmItem!)));
+    const first = root.querySelector<HTMLElement>('[data-rm-item][aria-pressed="true"]');
+    if (first) select(first.dataset.rmItem!);
+  });
+</script>
+
+<style>
+  .rm {
+    margin: 1.75rem 0;
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .rm-scroll {
+    overflow-x: auto;
+    contain: inline-size;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .rm-track {
+    position: relative;
+    min-width: 620px;
+    height: 150px;
+    margin: 0 1.25rem;
+  }
+  .rm-months span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    padding: 0.7rem 0 0 0.4rem;
+    border-left: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .rm-phases {
+    position: absolute;
+    inset: 44px 0 auto;
+    height: 40px;
+  }
+  .rm-phase {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    padding: 0 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font: 500 0.8rem/1 var(--font-body);
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+  .rm-phase.done {
+    background: rgb(159 190 210 / 0.22);
+    color: var(--ink);
+  }
+  .rm-phase.current {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .rm-phase:hover {
+    border-color: var(--ink-2);
+  }
+  .rm-phase[aria-pressed='true'] {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink);
+  }
+  .rm-spill {
+    position: absolute;
+    top: 89px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--accent);
+    opacity: 0.45;
+  }
+  .rm-ticks {
+    position: absolute;
+    inset: 104px 0 auto;
+    height: 24px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .rm-tick {
+    position: absolute;
+    top: -6px;
+    width: 11px;
+    height: 11px;
+    margin-left: -5.5px;
+    border: 2px solid var(--muted);
+    border-radius: 50%;
+    background: var(--surface);
+    transition: transform 0.2s ease;
+  }
+  .rm-tick.done {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .rm-tick.selected {
+    transform: scale(1.5);
+    box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--ink);
+    z-index: 1;
+  }
+  .rm-today {
+    position: absolute;
+    top: 34px;
+    bottom: 6px;
+    border-left: 1.5px dashed var(--warm);
+  }
+  .rm-today span {
+    position: absolute;
+    bottom: 0;
+    left: 0.4rem;
+    color: var(--warm);
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .rm-steps {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+  }
+  .rm-step {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--ink-2);
+    font: 0.85rem/1.2 var(--font-body);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .rm-step .rm-date {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .rm-step.done .rm-date {
+    color: var(--accent);
+  }
+  .rm-step:hover {
+    border-color: var(--accent);
+  }
+  .rm-step[aria-pressed='true'] {
+    border-color: var(--ink);
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .rm-detail {
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .rm-meta {
+    margin: 0 0 0.3rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .rm-status.done,
+  .rm-status.current {
+    color: var(--accent);
+  }
+  .rm-detail h4 {
+    margin: 0 0 0.35rem;
+    font-size: 1.15rem;
+    color: var(--ink);
+  }
+  .rm-detail p:last-child {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  figcaption {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .rm-phase:focus-visible,
+  .rm-step:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+</style>

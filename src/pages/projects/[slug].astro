@@ -20,7 +20,16 @@ export async function getStaticPaths() {
   return projects.map((project, i) => ({
     params: { slug: project.id },
     // "Keep exploring": the next three projects in order, wrapping around.
-    props: { project, more: [1, 2, 3].map((k) => projects[(i + k) % projects.length]) },
+    props: {
+      project,
+      more: project.data.related
+        ? project.data.related.map((id) => {
+            const p = projects.find((q) => q.id === id);
+            if (!p) throw new Error(`${project.id}: related project "${id}" not found`);
+            return p;
+          })
+        : [1, 2, 3].map((k) => projects[(i + k) % projects.length]),
+    },
   }));
 }
 
@@ -51,7 +60,7 @@ const sections = [
 const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).padStart(2, '0');
 ---
 
-<Base title={data.title} description={data.summary}>
+<Base title={data.title} description={data.description ?? data.summary}>
   <article class="wrap case">
     <header class="head">
       <a href="/projects" class="back">← All projects</a>
@@ -109,7 +118,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
       <div class="story">
         <section id="overview" data-section>
           <p class="kicker">{num('overview')} / Overview</p>
-          <p class="lede">{data.summary}</p>
+          {data.summary.split(/\n+/).map((p) => <p class="lede">{p}</p>)}
         </section>
 
         {
@@ -428,6 +437,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
 
   .story {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: clamp(3rem, 6vw, 4.5rem);
     /* Text runs the full width of the column beside the sidebar. */
   }
@@ -452,6 +462,9 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
     color: var(--ink);
     max-width: none;
   }
+  .lede + .lede {
+    margin-top: 1rem;
+  }
   .body {
     color: var(--ink-2);
     font-size: 1.1rem;
@@ -473,11 +486,56 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
     height: auto;
     border-radius: var(--radius);
   }
+  .prose :global(h3) {
+    margin: 2rem 0 0.5rem;
+    font-size: 1.3rem;
+    color: var(--ink);
+  }
   .prose :global(ul),
+  .prose :global(ol),
   .prose-list {
     padding-left: 1.1rem;
     color: var(--ink-2);
     font-size: 1.05rem;
+  }
+  .prose :global(ol) {
+    padding-left: 1.4rem;
+  }
+  /* Markdown tables, wrapped in <div class="table-scroll"> so wide ones scroll on phones. */
+  .prose :global(.table-scroll) {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .prose :global(table) {
+    width: 100%;
+    min-width: 44rem;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+  .prose :global(th),
+  .prose :global(td) {
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--line);
+  }
+  .prose :global(th) {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .prose :global(tr:last-child td) {
+    border-bottom: 0;
+  }
+  .prose :global(td:first-child) {
+    color: var(--ink);
+    white-space: nowrap;
   }
   .prose :global(li),
   .prose-list li {
@@ -551,8 +609,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
   .motion video {
     display: block;
     width: 100%;
-    aspect-ratio: 9 / 16;
-    object-fit: cover;
+    height: auto;
     border-radius: var(--radius);
     background: var(--img-bg);
   }

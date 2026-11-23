@@ -8,6 +8,10 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.order -
 const order = ['Robotics', 'Mechanical', 'Embedded', 'Software', 'Research'];
 const used = new Set(projects.flatMap((p) => p.data.categories));
 const filters = order.filter((c) => used.has(c as never));
+const groups = [
+  { title: 'Ongoing projects', items: projects.filter((p) => p.data.ongoing) },
+  { title: 'Past projects', items: projects.filter((p) => !p.data.ongoing) },
+].filter((g) => g.items.length > 0);
 ---
 
 <Base title="Projects" description="Robotics, mechanical, embedded and software projects by Yacoub Derradji.">
@@ -31,9 +35,16 @@ const filters = order.filter((c) => used.has(c as never));
       }
     </div>
 
-    <div class="grid" data-grid>
-      {projects.map((p, i) => <WorkCard project={p} eager={i < 2} />)}
-    </div>
+    {
+      groups.map((g, gi) => (
+        <section class="group" data-group>
+          <h2 class="group-title">{g.title}</h2>
+          <div class="grid" data-grid>
+            {g.items.map((p, i) => <WorkCard project={p} eager={gi === 0 && i < 2} />)}
+          </div>
+        </section>
+      ))
+    }
   </section>
 </Base>
 
@@ -46,6 +57,10 @@ const filters = order.filter((c) => used.has(c as never));
       chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
       cards.forEach((card) => {
         card.hidden = f !== 'all' && !card.dataset.categories!.split(',').includes(f);
+      });
+      // Hide a group's heading when the filter leaves it empty.
+      document.querySelectorAll<HTMLElement>('[data-group]').forEach((group) => {
+        group.hidden = !group.querySelector('[data-categories]:not([hidden])');
       });
     }),
   );
@@ -102,6 +117,21 @@ const filters = order.filter((c) => used.has(c as never));
   }
   .chip[aria-pressed='true'] span {
     color: var(--accent-ink);
+  }
+  .group + .group {
+    margin-top: clamp(2.25rem, 4vw, 3rem);
+  }
+  .group[hidden] {
+    display: none;
+  }
+  .group-title {
+    margin: 0 0 1rem;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
   .grid {
     display: grid;

@@ -1,6 +1,8 @@
 ---
-// Line chart of torque against coil current, drawn in the site's own style.
+// Line chart of torque against coil current, drawn in the site's own style (via XYChart).
 // Data are passed in by the page; nothing here is copied from a published figure.
+import XYChart from './XYChart.astro';
+
 interface Series {
   name: string;
   values: number[];
@@ -13,96 +15,21 @@ interface Props {
 }
 const { currents, series, caption } = Astro.props;
 
-const W = 640;
-const H = 400;
-const m = { top: 20, right: 122, bottom: 52, left: 54 };
-const xMax = Math.max(...currents);
 const yMax = Math.ceil(Math.max(...series.flatMap((s) => s.values)) / 5) * 5;
-const x = (v: number) => m.left + (v / xMax) * (W - m.left - m.right);
-const y = (v: number) => H - m.bottom - (v / yMax) * (H - m.top - m.bottom);
 const yTicks = Array.from({ length: yMax / 5 + 1 }, (_, i) => i * 5);
 const xTicks = currents.filter((_, i) => i % 3 === 0);
 const colors = ['var(--chart-b, #8fb4ff)', 'var(--accent)'];
-const path = (vals: number[]) => vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(currents[i]).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
 ---
 
-<figure class="chart">
-  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Torque against coil current for ${series.map((s) => s.name).join(' and ')}`}>
-    {yTicks.map((t) => (
-      <g>
-        <line class="grid" x1={m.left} x2={W - m.right} y1={y(t)} y2={y(t)} />
-        <text class="tick" x={m.left - 10} y={y(t)} text-anchor="end" dominant-baseline="middle">{t}</text>
-      </g>
-    ))}
-    {xTicks.map((t) => (
-      <text class="tick" x={x(t)} y={H - m.bottom + 20} text-anchor="middle">{t}</text>
-    ))}
-    <line class="axis" x1={m.left} x2={W - m.right} y1={y(0)} y2={y(0)} />
-    <text class="axis-label" x={(m.left + W - m.right) / 2} y={H - 8} text-anchor="middle">Coil current (A)</text>
-    <text class="axis-label" transform={`translate(15 ${(m.top + H - m.bottom) / 2}) rotate(-90)`} text-anchor="middle">Torque (N·mm)</text>
-    {series.map((s, i) => (
-      <g style={`color:${colors[i % colors.length]}`}>
-        <path class="line" d={path(s.values)} />
-        {s.values.map((v, j) => <circle class="pt" cx={x(currents[j])} cy={y(v)} r="3" />)}
-        <text class="series" x={x(xMax) + 10} y={y(s.values[s.values.length - 1])} dominant-baseline="middle">{s.name}</text>
-      </g>
-    ))}
-  </svg>
-  {caption && <figcaption>{caption}</figcaption>}
+<XYChart
+  series={series.map((s, i) => ({ name: s.name, color: colors[i % colors.length], points: s.values.map((v, j) => [currents[j], v]) }))}
+  xLabel="Coil current (A)"
+  yLabel="Torque (N·mm)"
+  xTicks={xTicks}
+  yTicks={yTicks}
+  labels="end"
+  ariaLabel={`Torque against coil current for ${series.map((s) => s.name).join(' and ')}`}
+  caption={caption}
+>
   <slot />
-</figure>
-
-<style>
-  .chart {
-    margin: 1.75rem 0;
-    display: grid;
-    gap: 0.6rem;
-    max-width: 52rem;
-  }
-  svg {
-    width: 100%;
-    height: auto;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-    font-family: var(--font-body);
-  }
-  .grid {
-    stroke: var(--line);
-    stroke-width: 1;
-  }
-  .axis {
-    stroke: var(--line-strong);
-    stroke-width: 1.5;
-  }
-  .tick {
-    fill: var(--muted);
-    font-size: 14px;
-  }
-  .axis-label {
-    fill: var(--ink-2);
-    font-size: 15px;
-  }
-  .line {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.5;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-  }
-  .pt {
-    fill: currentColor;
-  }
-  .series {
-    fill: currentColor;
-    font-size: 15px;
-    font-weight: 500;
-  }
-  figcaption,
-  .chart :global(p) {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-</style>
+</XYChart>

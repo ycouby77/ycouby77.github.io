@@ -17,21 +17,34 @@ interface Label {
   side?: 'left' | 'right' | 'top' | 'bottom';
 }
 interface Props {
-  src: ImageMetadata;
+  // An image, or a looping silent clip (`video` path under public/, with a `poster`).
+  src?: ImageMetadata;
+  video?: string;
+  poster?: string;
   alt: string;
   caption?: string;
   labels?: Label[];
+  // 'narrow' caps the width, for square or portrait shots and small clips.
+  size?: 'full' | 'narrow';
+  // Wide diagrams with small text: on phones, keep them legible and scroll sideways.
+  scroll?: boolean;
 }
-const { src, alt, caption, labels = [] } = Astro.props;
+const { src, video, poster, alt, caption, labels = [], size = 'full', scroll = false } = Astro.props;
 const pct = (v: number, total: number) => `${((v / total) * 100).toFixed(2)}%`;
 const targets = (l: Label): Pt[] => (Array.isArray(l.to[0]) ? (l.to as Pt[]) : [l.to as Pt]);
 ---
 
-<figure class="fig">
+<figure class:list={['fig', { narrow: size === 'narrow', scroll }]}>
   <div class="fig-frame">
-    <Image src={src} alt={alt} widths={[500, 900, 1400]} sizes="(max-width: 960px) 100vw, 60vw" quality={90} />
     {
-      labels.length > 0 && (
+      video ? (
+        <video src={video} poster={poster} aria-label={alt} autoplay muted loop playsinline preload="metadata" data-motion />
+      ) : (
+        src && <Image src={src} alt={alt} widths={[500, 900, 1400, 1900]} sizes="(max-width: 960px) 100vw, 60vw" quality={90} />
+      )
+    }
+    {
+      src && labels.length > 0 && (
         <>
           <svg class="fig-lines" viewBox={`0 0 ${src.width} ${src.height}`} preserveAspectRatio="none" aria-hidden="true">
             {labels.flatMap((l) => targets(l).map((t) => <line x1={l.at[0]} y1={l.at[1]} x2={t[0]} y2={t[1]} />))}
@@ -46,6 +59,7 @@ const targets = (l: Label): Pt[] => (Array.isArray(l.to[0]) ? (l.to as Pt[]) : [
       )
     }
   </div>
+  {scroll && <span class="fig-hint" aria-hidden="true">Swipe sideways to see the whole diagram.</span>}
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
 
@@ -63,10 +77,37 @@ const targets = (l: Label): Pt[] => (Array.isArray(l.to[0]) ? (l.to as Pt[]) : [
     background: #fff;
     line-height: 0;
   }
-  .fig-frame img {
+  .fig-frame img,
+  .fig-frame video {
     display: block;
     width: 100%;
     height: auto;
+  }
+  .fig.narrow {
+    max-width: 34rem;
+  }
+  .fig-row .fig.narrow {
+    max-width: none;
+  }
+  .fig-hint {
+    display: none;
+  }
+  @media (max-width: 700px) {
+    /* Wide diagrams keep a readable size and scroll sideways inside their frame. */
+    .fig.scroll .fig-frame {
+      overflow-x: auto;
+      /* Don't let the wide image widen the page; it scrolls inside the frame. */
+      contain: inline-size;
+    }
+    .fig.scroll .fig-frame img {
+      width: 720px;
+      max-width: none;
+    }
+    .fig.scroll .fig-hint {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
   }
   .fig-lines {
     position: absolute;

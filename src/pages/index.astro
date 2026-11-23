@@ -14,8 +14,12 @@ import { teaser, headshot, teaserPhotos } from '../data/about';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
-// Home grid: the first six projects by order (two rows of three). Everything is on /projects.
-const homeCards = projects.slice(0, 6);
+// Home grid: every ongoing project, then the first three past ones. Everything is on /projects.
+const ongoing = projects.filter((p) => p.data.ongoing);
+const homeGroups = [
+  { title: 'Ongoing projects', items: ongoing },
+  { title: 'Past projects', items: projects.filter((p) => !p.data.ongoing).slice(0, 3) },
+].filter((g) => g.items.length > 0);
 // Hero carousel: each configured project's first 3D model, swapped for the lighter file.
 const heroItems = heroModels.flatMap(({ project: id, src }) => {
   const project = projects.find((p) => p.id === id);
@@ -76,9 +80,16 @@ const headTail = words.slice(-2).join(' ');
       <h2 class="section-title">Projects</h2>
       <a class="see-all" href="/projects">All {projects.length} projects <Icon name="arrow-right" size={16} /></a>
     </div>
-    <div class="card-grid">
-      {homeCards.map((p, i) => <WorkCard project={p} eager={i < 3} />)}
-    </div>
+    {
+      homeGroups.map((g, gi) => (
+        <div class="card-group">
+          <h3 class="group-title">{g.title}</h3>
+          <div class="card-grid">
+            {g.items.map((p, i) => <WorkCard project={p} eager={gi === 0 && i < 3} />)}
+          </div>
+        </div>
+      ))
+    }
   </section>
 
   <section id="experience" class="section wrap">
@@ -226,6 +237,18 @@ const headTail = words.slice(-2).join(' ');
   .see-all:hover {
     text-decoration: underline;
     text-underline-offset: 4px;
+  }
+  .card-group + .card-group {
+    margin-top: clamp(2rem, 4vw, 3rem);
+  }
+  .group-title {
+    margin: 0 0 1rem;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
   .card-grid {
     position: relative;

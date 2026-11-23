@@ -1,0 +1,400 @@
+---
+title: Cycloidal Stepper Actuator
+order: 0.5
+featured: true
+ongoing: true
+context: Personal build
+role: Solo build. Requirements, CAD, printing, assembly, testing
+status: Actuator in testing
+categories: [Robotics, Mechanical, Embedded]
+period: 'Oct. 2026 - Present (target: Mar. 2027)'
+disciplines: [Actuator design, Motor control, Print tolerancing]
+summary: |-
+  I'm building a robot actuator from the motor up. A NEMA 17 stepper runs closed loop with field-oriented control (FOC). It drives a 3D-printed 25:1 cycloidal gearbox, and a 14-bit magnetic encoder on the back of the motor closes the loop, all on an STM32.
+  Two of these will drive the shoulder and elbow of a roughly 5 DOF desk arm that picks up and organizes small objects. The actuator is the part I care most about, so it gets the detail here.
+  Where it is today: actuator v2 is assembled, runs closed loop through the gearbox, and has its first no-load test data. Torque and backlash aren't measured yet.
+description: >-
+  A NEMA 17 stepper run closed loop with FOC, a 3D-printed 25:1 cycloidal gearbox and a 14-bit encoder:
+  the first actuator for a desk robot arm.
+objective: >-
+  The numbers came from the arm. Holding 200 g at 50 cm puts about 5 N·m on the shoulder once the arm's own
+  mass is counted. With the L298N driver capped at 2 A, 25:1 gives a ceiling of roughly 7.9 N·m on paper.
+  That's an estimate, not a measurement yet.
+tools: [SolidWorks, Bambu A1 + PETG, STM32 NUCLEO-G474RE, SimpleFOC, PlatformIO, Python]
+specs:
+  - { label: Ratio, value: '25:1, one stage' }
+  - { label: Ring pins, value: '26 × Ø3 on Ø50' }
+  - { label: Housing, value: 'Ø69 mm (v2)' }
+  - { label: Motor, value: 'NEMA 17, closed-loop FOC' }
+  - { label: Encoder, value: 14-bit AS5047P }
+  - { label: Arm target, value: '50 cm reach, 200 g' }
+results:
+  - Actuator v2 assembled, closed loop through the gearbox
+  - 'First no-load data: precise positioning, driver deadband diagnosed'
+  - 'Not measured yet: stall torque and backlash'
+  - 'Next: torque and backlash on the lever arm, CAN, unit #2'
+cover: { src: ./media/hero.jpg, alt: 'Side view of the assembled orange 3D-printed cycloidal actuator on a NEMA 17 stepper, with the encoder cage on the back of the motor' }
+cardImage: { src: ./media/card.jpg, alt: 'Orange 3D-printed cycloidal actuator on a NEMA 17 stepper, three-quarter view of the output face' }
+gallery:
+  - { src: ./media/v2-three-quarter.jpg, alt: 'v2 actuator, three-quarter view', label: v2, caption: 'v2, three-quarter view' }
+  - { src: ./media/v2-top-view-wired.jpg, alt: 'v2 actuator assembled and wired, encoder cage on the back', label: v2, caption: 'v2 assembled and wired, encoder cage on the back' }
+  - { src: ./media/all-parts-laid-out.jpg, alt: Every gearbox part laid out before the first assembly, label: Assembly, caption: Every gearbox part before the first assembly }
+  - { src: ./media/housing-26-ring-pins.jpg, alt: Printed housing with 26 steel ring pins pressed in, label: Assembly, caption: Housing with all 26 ring pins pressed in }
+  - { src: ./media/cam-and-second-disc.jpg, alt: Cam in place with the second cycloid disc on top, label: Assembly, caption: 'Cam in, second disc on top, 180° out of phase' }
+  - { src: ./media/output-carrier-assembled.jpg, alt: 'Output carrier with two 6808 bearings, output pins with bronze bushings and a 688 in the centre', label: Assembly, caption: 'Output carrier: 6808 pair, output pins with bronze bushings, 688 in the centre' }
+  - { src: ./media/cad-outside-view.png, alt: CAD outside view of the actuator on the NEMA 17, label: CAD, caption: 'CAD outside view, Oct 28', matte: '#ffffff' }
+  - { src: ./media/cad-encoder-cage.png, alt: CAD of the encoder cage and lid on the motor, label: CAD, caption: Encoder cage CAD on the motor, matte: '#ffffff' }
+galleryNote: Photos are from my bench. CAD renders are from SolidWorks. The diagrams are drawn from my design numbers.
+related: [mr-clutch-actuator, offroad-rc-vehicle, tendon-gripper]
+links:
+  - { label: Code on GitHub, href: 'https://github.com/ycouby77/cycloidal-actuator-arm' }
+---
+
+import Figure from '../../../components/Figure.astro';
+import XYChart from '../../../components/XYChart.astro';
+import Roadmap from '../../../components/Roadmap.astro';
+import howItWorks from './media/cycloid-how-it-works.png';
+import cadSection from './media/cad-section-labeled.png';
+import discBushings from './media/cad-disc-front-bushings.png';
+import architecture from './media/system-architecture.png';
+import controlLoop from './media/control-loop.png';
+import couponPlate from './media/fit-coupon-plate.png';
+import stuckBearing from './media/6808-stuck-on-carrier-boss.jpg';
+import camBearings from './media/cam-with-bearings.jpg';
+import encoderCage from './media/encoder-cage-on-motor.jpg';
+import encoderSection from './media/cad-encoder-section.png';
+import firstRig from './media/first-test-rig.jpg';
+import closedLoopBench from './media/closed-loop-bench.jpg';
+import partsLabeled from './media/parts-labeled.jpg';
+import v1Face from './media/v1-output-face.jpg';
+import v2Face from './media/v2-output-face.jpg';
+import gui from './media/graph-actuator-gui.png';
+import stepResponses from './media/graph-step-responses.png';
+import velocitySweeps from './media/graph-velocity-sweeps.png';
+import breakaway from './media/graph-breakaway.png';
+
+This is a solo project. I set the requirements and made the design decisions (each one is logged with the options I rejected). I did all the CAD in SolidWorks and tuned the print fits. I also built and wired the hardware and ran and diagnosed the tests.
+
+I used Claude, an AI assistant, a lot along the way. It tutored me through the theory and helped with part sourcing. It also helped me write all of the code: the firmware on top of the SimpleFOC library and the Python test GUI.
+
+## How a cycloidal drive works
+
+<Figure
+  src={howItWorks}
+  size="narrow"
+  alt="Cycloid disc with 25 lobes inside 26 ring pins, six output pins with bronze bushings, cam bearing in the centre"
+  caption="Disc profile drawn from the design parameters (26 pins on Ø50, Ø3 pins, e = 0.72 mm). I modeled the real disc directly in SolidWorks."
+/>
+
+The motor shaft turns a cam with two lobes, each offset 0.72 mm from the axis and 180° apart. Each lobe carries a 6801 bearing, and each bearing sits in a cycloid disc. As the cam spins, each disc's centre orbits the motor axis without the disc spinning freely, because its 25 lobes are trapped by 26 fixed ring pins.
+
+There is one more pin than lobes, so every full orbit rolls the disc back by one lobe. That's 1/25 of a turn in the opposite direction: a 25:1 reduction in one stage.
+
+Six steel output pins pass through holes in both discs. The holes are sized at roller diameter plus twice the eccentricity, so the pins ride the wobble and only pick up the slow rotation. The pins are fixed to the output carrier, which runs on a spaced pair of 6808 bearings. A 688 bearing in the carrier supports the far end of the cam so the motor shaft doesn't take the side load.
+
+Two discs instead of one balance the eccentric mass and split the load.
+
+<Figure
+  src={cadSection}
+  scroll
+  alt="Labeled CAD cross-section of the actuator from motor to output cover"
+  caption="CAD section from Oct 28 (v1 layout). v2 grew the outer diameter to 69 mm and kept the internals the same."
+/>
+
+<Figure
+  src={discBushings}
+  size="narrow"
+  alt="CAD front view of a cycloid disc in the ring pins with bronze bushings on the output pins"
+  caption="One disc in the ring pins with bronze bushings on the output pins. The red mark is where the two discs' output holes overlap: a 5 mm bushing fits that lens exactly."
+/>
+
+## System architecture
+
+<Figure
+  src={architecture}
+  scroll
+  alt="Block diagram: PC GUI, NUCLEO-G474RE, L298N, NEMA 17, cycloidal gearbox, AS5047P encoder, bench supply, planned CAN bus"
+/>
+
+A NUCLEO-G474RE runs SimpleFOC in voltage mode. The L298N driver has no current sensing, so torque is commanded as a q-axis voltage (Uq) rather than a current. The bench supply sits at 6 V and the firmware is told 4 V, which accounts for the L298N's roughly 2 V drop. That way a commanded voltage is close to what the coil actually sees. A 2.5 V limit keeps coil current around 1.7 A, under the motor's 2 A rating.
+
+The AS5047P reads a magnet on the motor's rear shaft over SPI. The stepper has 50 pole pairs, so any mechanical angle error is multiplied by 50 in electrical angle. That's why the encoder mount became a mechanical design problem of its own (see [Encoder and electronics bring-up](#encoder-and-electronics-bring-up)).
+
+Today the PC talks to the board over USB serial through a small line protocol with a 1 s watchdog. The CAN parts are on hand (SN65HVD230 transceivers and a USB-CAN adapter) and will replace serial before the arm, so every joint shares one bus.
+
+<Figure
+  src={controlLoop}
+  scroll
+  alt="Cascade control loop: angle P, velocity PI, FOC modulation, L298N, motor and gearbox, encoder feedback"
+/>
+
+## Key design decisions
+
+Every row is in my notebook's decision log.
+
+<div class="table-scroll">
+
+| Decision | Picked | Over | Why |
+|---|---|---|---|
+| Gearbox | Cycloidal, one stage | Planetary | I already knew planetary from lab work. A cycloid gets a high ratio in one stage, and it was the new challenge |
+| Motor | NEMA 17 stepper, my own closed loop | BLDC (T-Motor MN5008) | BLDC was too expensive for now. FOC on a stepper is its own problem to solve |
+| Ratio | 25:1 | 20:1 | The L298N's 2 A cap makes torque the limit. 25:1 gives about 7.9 vs 6.3 N·m on paper |
+| Discs | Two, 180° apart | One | Balances the eccentric mass and splits the load |
+| Output rollers | Sintered bronze bushings, 3×5×8 | Bare pins, PTFE sleeves, MR63 ball bearings | Drops contact stress on the PETG hole wall from about 50 to 32 MPa at 5 N·m, with no CAD change |
+| Output bearings | Two 6808ZZ, spaced pair | One 6808 | One deep-groove bearing acts like a pivot under tilt. A spaced pair turns the moment into a force couple (F = M/d) |
+| Output pins | 3×28 steel in a 12 mm socket | The 3×19.6 pins I had, about 4 mm deep | Socket pressure scales with 1/L²: about 80 MPa down to about 8 MPa |
+| Encoder link | SPI | ABI | With 50 pole pairs, SPI resolves about 1.1° electrical per count vs 4.4° on ABI |
+| Command link | CAN | USB serial per joint | One bus for every joint, with IDs, CRC and arbitration. The G474 has FDCAN built in |
+| Driver | L298N | MOSFET drivers, MKS SERVO42D | Cheapest. I accepted the heat and the 2 A cap. It turned out to be the bottleneck (see [the driver deadband](#first-powered-tests-and-the-driver-deadband)) |
+
+</div>
+
+## Printing to bearing tolerances
+
+Every bearing seat in this actuator is printed PETG, so the fits had to be measured rather than guessed. Before printing any real parts, I printed coupon plates that sweep each bearing bore and boss in 0.05 mm steps and tested them against the real bearings.
+
+<Figure
+  src={couponPlate}
+  size="narrow"
+  alt="CAD of the PETG fit coupon plate with bearing bores and bosses in 0.05 mm steps"
+  caption="Fit coupons for the 6801, 688 and 6808 bearings: bores and bosses in 0.05 mm steps."
+/>
+
+What I found on the Bambu A1 with Elegoo PETG HF:
+
+- Holes printed on size at Ø16 to Ø21 and about 0.15 to 0.2 mm small at Ø52.
+- Bosses printed 0.2 to 0.3 mm small at every size.
+- Press fits landed at nominal + 0.10 mm for the 688 and 6801 bores and + 0.20 mm for the 6808.
+
+Then the real parts printed differently from the coupons. The output housing bore came out 51.9 where the coupon gave 52.1. A press fit that felt right over a 5 mm coupon was far too tight over the carrier's 16 mm boss, and the first 6808 stuck halfway down. The fix was a stepped boss: press fit only on the first bearing's 7 mm seat, slip fit above it.
+
+Some fits are tradeoffs. Ø3 pin holes vary print to print by as much as the sweep step, so I settled on 3.25. The disc roller holes went to 6.70 (minimum 6.44). That leaves about 0.11 mm of clearance, roughly 0.4° of output backlash on paper, but holes that are too tight would bind the gearbox, which is worse.
+
+<div class="fig-row">
+<Figure
+  src={stuckBearing}
+  alt="6808 bearing stuck partway down a printed carrier boss"
+  caption="First 6808 stuck partway down the carrier boss. This led to the stepped boss."
+/>
+<Figure
+  src={camBearings}
+  alt="Printed cam with a 688 and two 6801 bearings fitted"
+  caption="Printed cam with the 688 and both 6801s fitted."
+/>
+</div>
+
+## Encoder and electronics bring-up
+
+The AS5047P boards ship in 5 V mode, where the chip's input threshold is 3.5 V. That can't work with 3.3 V logic. I traced both boards against the schematic and bridged R2 to convert them to 3.3 V.
+
+The motor's rear shaft is non-magnetic stainless, so the encoder magnet jumped to the motor body instead of sticking. It now sits in a printed holder.
+
+With the board held by hand, the reading wobbled ±250 counts once per turn. That's about 5.5° mechanical, or about 275° electrical after the 50× pole-pair multiplier: far past the point where FOC torque drops to zero. So I designed a two-piece cage. Corner arms locate on the motor body (0.2 mm offset after a test print), two M2.5 screws into the motor's rear tapped holes clamp it, and the chip sits 1.5 mm from the magnet.
+
+<div class="fig-row">
+<Figure
+  src={encoderCage}
+  alt="Orange printed encoder cage on the back of the stepper, wired to the Nucleo"
+  caption="Printed encoder cage on the motor's rear face, wired to the Nucleo."
+/>
+<Figure
+  src={encoderSection}
+  alt="CAD section through the encoder board, magnet and motor shaft"
+  caption="Section through the board, magnet and shaft."
+/>
+</div>
+
+Other bring-up lessons:
+
+- One of my two L298N modules had a dead channel. The rotor buzzed and rocked until I single-stepped and measured each output. Test the driver before trusting it.
+- A wiggle test on the SPI jumpers found intermittent CSn and MOSI wires. A fake 250° jump times 50 pole pairs would have been a violent kick under FOC.
+- SimpleFOC 2.4.0 didn't build on the newest STM32 Arduino core, so I pinned core 2.12.0 in PlatformIO.
+
+<Figure
+  src={firstRig}
+  alt="First test rig: Nucleo, L298N and stepper on a cutting mat"
+  caption="First test rig for the open-loop spin, Oct 31."
+/>
+
+## Closing the loop
+
+<Figure
+  src={closedLoopBench}
+  size="narrow"
+  alt="Bench with the Nucleo, L298N and bench supply set to 6.00 V"
+  caption="Closed-loop bench, Nov 12: supply at 6.00 V with a 1.5 A limit."
+/>
+
+On Nov 12 the bare motor ran closed loop: initFOC passed on every boot, then torque, velocity and angle modes all tracked.
+
+- Zero electrical angle spread over 4 boots: 0.42° at the shaft.
+- Angle moves up to 9.3 rad: final error 0.001 to 0.02 rad at the motor, about 0.05° at the output after 25:1.
+- Pushed 0.22 rad off target, it pushed back and settled within 0.01 rad.
+
+One thing already showed up here: in torque mode the motor didn't move below about 1.5 to 2 V. I parked that until the gearbox was on. It became the main finding in [the first powered tests](#first-powered-tests-and-the-driver-deadband).
+
+## First assembly, then v2
+
+<Figure
+  src={partsLabeled}
+  alt="Every actuator part laid out on a cutting mat, numbered with a legend"
+  caption="Every part of actuator v1, numbered."
+/>
+
+The first full gearbox went together on Nov 19 and turned on the first try. It also showed three problems.
+
+- Two bearing spacers were designed outside the assembly, so they fit nowhere.
+- The cam rubbed the PETG disc bore beyond the bearing. PETG on PETG at input speed means heat and dust.
+- The screw patterns of the adapter plate, housing, output housing and cover didn't line up. Only 2 cover screws went in.
+
+The v2 fixes went into CAD the same evening:
+
+- Outer diameter went from 66 to 69 mm, because the insert holes sat too close to the ring pins. Every mounting screw is now on one Ø60 circle, into heat-set inserts.
+- The cover now clamps the outer 6808's outer race, with a spacer between the outer races so the clamp force doesn't go through the balls.
+- The disc lip hole opened to Ø16.5 so it only touches the bearing's outer race.
+- The housing was reprinted with larger ring pin holes after warping made some pins lean inward. The discs push the pins out into the wall, so a slip fit still locates them.
+
+<div class="fig-row">
+<Figure
+  src={v1Face}
+  alt="v1 output face with only two cover screws fitted"
+  caption="v1, Nov 19: only 2 cover screws went in"
+/>
+<Figure
+  src={v2Face}
+  alt="v2 output face with four cover screws, 6808 bearing and output carrier visible"
+  caption="v2, Nov 22: all 4 cover screws land in heat-set inserts"
+/>
+</div>
+
+## First powered tests and the driver deadband
+
+Nov 22, no load, logged at 200 Hz through the new test GUI.
+
+<Figure
+  src={gui}
+  scroll
+  alt="Test GUI with position, velocity and voltage plots for a 10 degree step"
+  caption="Test GUI with a real 10° step log replayed: position, velocity and Uq against target."
+/>
+
+### What worked
+
+- Position steps of 10° and 45° overshoot about 0.3% and settle within 0.01 to 0.02° at the output, almost identical every repeat. Moves are speed limited to 10°/s.
+- Holding still, the jitter is 0.002° (standard deviation).
+- Averaged over each motor turn, the voltage needed stays flat within about ±3% across a full output turn in both directions. No tight spots from the carrier, the output bearings or the slip-fit ring pins.
+
+<Figure
+  src={stepResponses}
+  scroll
+  alt="Normalized 10 and 45 degree step responses, all repeats overlaid"
+/>
+
+<Figure
+  src={velocitySweeps}
+  scroll
+  alt="Voltage across a full output turn (flat) and within one motor turn (small bump)"
+/>
+
+### What didn't
+
+Moving slowly used most of the 2.5 V limit. The fit was about 1.68 V + 0.167 V per motor rad/s, so at 10°/s at the output it was already at the cap.
+
+<XYChart
+  ariaLabel="Mean voltage against motor speed: three logged runs near 2.0 to 2.4 V, a linear fit starting at 1.68 V, and the 2.5 V limit"
+  xLabel="Motor speed (rad/s)"
+  yLabel="Mean |Uq| (V)"
+  xTicks={[0, 1, 2, 3, 4, 5]}
+  yTicks={[0, 0.5, 1, 1.5, 2, 2.5, 3]}
+  yDecimals={1}
+  hline={{ y: 2.5, label: '2.5 V limit' }}
+  series={[
+    { name: 'Fit: 1.68 V + 0.167 V·s/rad', kind: 'dashed', color: 'var(--muted)', points: [[0, 1.68], [5, 1.68 + 0.167 * 5]] },
+    { name: 'Logged runs (approximate)', kind: 'points', color: 'var(--accent)', points: [[2.18, 2.04], [4.06, 2.37], [4.14, 2.37]] },
+  ]}
+  caption="Voltage needed against speed, no load, Nov 22. Speeds are motor side (output speed × 25). Point values are approximate, read from the logged runs. Most of the 1.68 V intercept is the L298N deadband, not gearbox friction."
+/>
+
+My first guess was gearbox friction. The data pointed elsewhere:
+
+1. The bare motor needed about 2 V on Nov 12 too, before any gearbox.
+2. In breakaway runs the output stuck at points exactly 0.288° apart. That's one electrical cycle, so the torque dip was electrical, not mechanical.
+3. Stalled supply current at 1.5 V was about 20% of what an ideal driver would give, and almost nothing flowed below 1 V.
+4. The second L298N behaved the same, and initFOC alignment repeated within 0.06 rad electrical. That ruled out a bad module and bad alignment.
+
+<XYChart
+  ariaLabel="Stalled supply current against commanded voltage: both L298N modules stay far below the ideal driver curve"
+  xLabel="Commanded Uq (V)"
+  yLabel="Supply current above baseline (A)"
+  xTicks={[0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]}
+  xDecimals={2}
+  yTicks={[0, 0.1, 0.2, 0.3, 0.4]}
+  yDecimals={1}
+  series={[
+    { name: 'Ideal driver, U²/(4R), R = 1.48 Ω', kind: 'dashed', color: 'var(--muted)', points: Array.from({ length: 31 }, (_, i) => [i * 0.05, (i * 0.05) ** 2 / (4 * 1.48)]) },
+    { name: 'L298N module A (range over 3 rotor positions)', kind: 'range', color: 'var(--chart-b, #8fb4ff)', points: [[0.5, 0.014, 0.019], [1.0, 0.023, 0.030], [1.5, 0.082, 0.088]] },
+    { name: 'L298N module B', kind: 'points', color: 'var(--accent)', points: [[0.5, 0.017], [1.0, 0.027], [1.5, 0.093]] },
+  ]}
+  caption="Stalled supply current, torque mode, Nov 22. At 1.5 V the coils see roughly 20% of the commanded voltage, and almost nothing below 1 V. Both modules match, so it's the driver design, not a bad part."
+/>
+
+<Figure
+  src={breakaway}
+  scroll
+  alt="Output movement against a stepped torque command in both directions"
+/>
+
+The cause is the L298N itself. During each PWM off-time, coil current freewheels through a diode and a bipolar transistor. That puts about 1.2 V backwards across the coil. The loss scales with (1 − duty), so it's worst at low duty, which is exactly the low-speed region FOC cares about. MOSFET drivers avoid it with low on-resistance and synchronous rectification.
+
+I'm keeping the L298N for now and adding deadband compensation in firmware. Then I'll rerun the sweeps to see what the gearbox really costs. The driver choice gets revisited when the arm design starts.
+
+## What's next
+
+<Roadmap
+  start="2026-10-01"
+  end="2027-04-01"
+  asOf="2026-11-23"
+  spill={{ start: '2026-12-07', end: '2026-12-20', label: 'Expected Phase 1 spill' }}
+  phases={[
+    { label: 'Reqs', title: 'Requirements', start: '2026-10-01', end: '2026-10-11', when: 'Early Oct.', text: 'Set the requirements from the arm: 50 cm reach and 200 g, about 5 N·m at the shoulder.' },
+    { label: 'Phase 1: Actuator', title: 'Phase 1: Actuator', start: '2026-10-12', end: '2026-12-06', when: 'Oct. to Dec. 6', text: 'Design, print, assemble and test the actuator. Running about a week behind and expected to spill into the December exam buffer.' },
+    { label: 'Exams', title: 'Buffer: December exams', start: '2026-12-07', end: '2026-12-20', when: 'Dec. 7 to Dec. 20', text: 'A buffer for December exams. Phase 1 is expected to spill into it.' },
+    { label: 'Phase 2: Arm', title: 'Phase 2: Arm', start: '2026-12-21', end: '2027-02-07', when: 'Dec. 21 to Feb. 7', text: 'Arm CAD, forward and inverse kinematics derived by hand, all joints under software control, then Cartesian moves. Shoulder and elbow use this actuator. Base, wrist and gripper use smart servos.' },
+    { label: 'Phase 3: Task', title: 'Phase 3: Task', start: '2027-02-08', end: '2027-03-31', when: 'Feb. 8 to Mar. 31', text: 'Scripted pick-and-place that organizes small objects on my desk, a final demo video, and a write-up. Stretch goal: learn the pick from demonstrations with a desk camera (ACT via LeRobot).' },
+  ]}
+  milestones={[
+    { date: '2026-10-31', title: 'First open-loop spin', text: 'First test rig: Nucleo, L298N and stepper. One of my two L298N modules had a dead channel.' },
+    { date: '2026-11-04', title: 'First encoder read', text: 'First angle readings from the AS5047P over SPI.' },
+    { date: '2026-11-12', title: 'Closed loop, bare motor', text: 'initFOC passed on every boot, then torque, velocity and angle modes all tracked.' },
+    { date: '2026-11-19', title: 'Gearbox assembled', text: 'The first full gearbox turned on the first try and showed three problems. The v2 fixes went into CAD the same evening.' },
+    { date: '2026-11-22', title: 'First powered tests', text: 'No-load steps overshoot about 0.3% and holding jitter is 0.002°. The low-speed voltage turned out to be L298N deadband, not gearbox friction.' },
+    { date: '2026-12-06', title: 'Torque, backlash, CAN, unit #2', text: 'Stall torque and backlash on a printed lever arm (r = 100 mm), deadband compensation, the CAN link, and building actuator #2.' },
+    { date: '2027-01-03', title: 'Arm CAD + FK/IK derived', text: 'Arm CAD, with forward and inverse kinematics derived by hand.' },
+    { date: '2027-01-17', title: 'All joints under software control', text: 'Every joint of the arm driven from software.' },
+    { date: '2027-01-31', title: 'Cartesian moves with IK', text: 'The arm moving in Cartesian space through the inverse kinematics.' },
+    { date: '2027-02-21', title: 'Scripted pick-and-place', text: 'A scripted pick-and-place that organizes small objects on my desk.' },
+    { date: '2027-03-28', title: 'Final demo video', text: 'A final demo video of the arm doing the task.' },
+    { date: '2027-03-31', title: 'Write-up', text: 'A write-up of the whole project.' },
+  ]}
+  caption="Plan as of Nov. 23. Pick a phase or milestone for details."
+/>
+
+**Actuator** (Phase 1, running about a week behind and expected to spill into the December exam buffer):
+
+1. Stall torque on a printed lever arm (r = 100 mm) and a kitchen scale, at 2 to 3 voltage limits.
+2. Backlash from load against displacement at the lever, both directions.
+3. Deadband compensation in firmware, then rerun the sweeps and breakaway.
+4. CAN link between the Nucleo and the PC.
+5. Build actuator #2.
+
+**Arm** (Phase 2, Dec 21 to Feb 7): arm CAD, forward and inverse kinematics derived by hand, all joints under software control, then Cartesian moves. Shoulder and elbow use this actuator. Base, wrist and gripper use smart servos.
+
+**Task** (Phase 3, Feb 8 to Mar 31): scripted pick-and-place that organizes small objects on my desk, a final demo video, and a write-up. Stretch goal: learn the pick from demonstrations with a desk camera (ACT via LeRobot).
+
+## What I learned
+
+- Design parts in the assembly, not on their own. Both the spacer and the screw-hole problems came from parts drawn in isolation.
+- Coupons give the size, but big parts and long press fits print differently. Leave margin on large bores and only press where the bearing sits.
+- Test a driver before trusting it. It cost me a dead channel on Oct 31 and explained the deadband on Nov 22.
+- Pole pairs multiply everything. With 50 of them, encoder mounting is as much a mechanical problem as an electrical one.
+- Logging every session paid off. The same 2 V on the bare motor 10 days earlier is what pointed away from the gearbox.

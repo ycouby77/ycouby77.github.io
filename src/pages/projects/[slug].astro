@@ -40,6 +40,10 @@ const dev = import.meta.env.DEV;
 
 const hero = data.cover ?? data.gallery[0];
 const heroMatte = hero && 'matte' in hero ? hero.matte : undefined;
+// Photos much narrower than the wide banner would be cropped to a thin strip. Show those
+// whole, centred over a blurred copy of themselves (on phones the frame takes their shape).
+const heroAr = hero ? hero.src.width / hero.src.height : 0;
+const heroFit = Boolean(hero) && !heroMatte && heroAr > 0 && heroAr < 1.9;
 // Markdown "## Heading" sections are the process steps.
 const steps = headings.filter((h) => h.depth === 2);
 const hasMedia = data.gallery.length > 0 || data.videos.length > 0;
@@ -73,8 +77,12 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
 
     {
       hero && (
-        <figure class:list={['hero', { matted: heroMatte }]} style={heroMatte ? `--matte: ${heroMatte}` : undefined}>
-          <Image src={hero.src} alt={hero.alt} widths={[800, 1200, 1700, 2200]} sizes="(max-width: 1720px) 100vw, 1680px" loading="eager" quality={88} />
+        <figure
+          class:list={['hero', { matted: heroMatte, fit: heroFit }]}
+          style={heroMatte ? `--matte: ${heroMatte}` : heroFit ? `--ar: ${Math.max(heroAr, 0.8).toFixed(3)}` : undefined}
+        >
+          {heroFit && <Image class="hero-bg" src={hero.src} alt="" aria-hidden="true" widths={[480]} sizes="480px" loading="eager" quality={60} />}
+          <Image class="hero-main" src={hero.src} alt={hero.alt} widths={[800, 1200, 1700, 2200]} sizes="(max-width: 1720px) 100vw, 1680px" loading="eager" quality={88} />
         </figure>
       )
     }
@@ -345,6 +353,19 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
   }
   .hero.matted {
     background: var(--matte);
+  }
+  .hero.fit {
+    position: relative;
+  }
+  .hero.fit :global(.hero-bg) {
+    position: absolute;
+    inset: 0;
+    filter: blur(32px) brightness(0.5) saturate(1.1);
+    transform: scale(1.2);
+  }
+  .hero.fit :global(.hero-main) {
+    position: relative;
+    object-fit: contain;
   }
   .hero.matted :global(img) {
     object-fit: contain;
@@ -654,6 +675,16 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
   @media (max-width: 640px) {
     .hero {
       aspect-ratio: 4 / 3;
+    }
+    /* Phones: the frame takes the photo's own shape (no tighter than 4:5), so nothing is cut. */
+    .hero.fit {
+      aspect-ratio: var(--ar);
+    }
+    .hero.fit :global(.hero-bg) {
+      display: none;
+    }
+    .hero.fit :global(.hero-main) {
+      object-fit: cover;
     }
     .more-grid {
       grid-template-columns: minmax(0, 1fr);

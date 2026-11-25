@@ -29,7 +29,7 @@ I built it with Claude Code.
 
 ## Why I built it
 
-I was starting in the lab and reading a lot of papers, and it was a good first real project to build with Claude Code.
+I was starting in the lab and reading a lot of papers, and it was a good first full project to build with Claude Code.
 
 ## What it does
 

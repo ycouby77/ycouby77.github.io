@@ -4,7 +4,7 @@
 export const profile = {
   name: 'Yacoub Derradji',
   headline: 'I design, build, and program robotic systems.',
-  program: 'Mechatronic Systems Engineering · AI Systems Engineering · Western University',
+  program: 'Mechatronic Systems and AI Systems Engineering, Western University',
   // Hero subline. Keep it under ~20 words; the longer intro is used for meta descriptions.
   tagline:
     'Third-year mechatronics and AI systems engineering student. Mechanism design, embedded control, and software, from first principles to working prototypes.',

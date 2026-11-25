@@ -1,5 +1,5 @@
 ---
-// Project card: big photo, context badge, status chip, title, a few tags.
+// Project card: big photo, context and status line, title, a few tags.
 // Used on the home page grid and on /projects (where data-categories drives the filter).
 import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
@@ -17,10 +17,10 @@ const matte = pic && 'matte' in pic ? pic.matte : undefined;
 const href = `/projects/${project.id}`;
 ---
 
-<article class:list={['work-card', { wide, compact: !pic }]} data-categories={data.categories.join(',')}>
+<article class:list={['work-card', { wide, compact: !pic }]} data-categories={data.categories.join(',')} data-tilt>
   {
     pic ? (
-      <a class:list={['shot', { matted: matte }]} href={href} tabindex="-1" aria-hidden="true" data-tilt style={matte ? `--matte: ${matte}` : undefined}>
+      <a class:list={['shot', { matted: matte }]} href={href} tabindex="-1" aria-hidden="true" style={matte ? `--matte: ${matte}` : undefined}>
         <Image
           src={pic.src}
           alt=""
@@ -29,15 +29,14 @@ const href = `/projects/${project.id}`;
           quality={88}
           loading={eager ? 'eager' : 'lazy'}
         />
-        <span class="badge">{data.context}</span>
       </a>
     ) : (
-      // No photo yet: a short text-only card instead of an empty image box.
-      <p class="badge inline">{data.context}</p>
+      // No photo: a short text-only card instead of an empty image box.
+      null
     )
   }
   <div class="text">
-    {data.status && <p class="status">{data.status}</p>}
+    <p class="meta-line"><span class="ctx">{data.context}</span>{data.status && <span class="status">{data.status}</span>}</p>
     <h3><a href={href}>{data.title}</a></h3>
     {!pic && <p class="blurb">{data.summary}</p>}
     <ul class="tags">
@@ -55,11 +54,22 @@ const href = `/projects/${project.id}`;
     border: 1px solid var(--line);
     border-radius: calc(var(--radius) + 6px);
     background: rgb(16 19 22 / 0.55);
-    transition: border-color 0.25s ease, background 0.25s ease;
   }
   .work-card:hover {
-    border-color: var(--line-strong);
     background: rgb(16 19 22 / 0.8);
+  }
+  /* Hover: the whole card leans toward the cursor (script in Base.astro) and a soft
+     green glow lifts it off the page. */
+  .work-card {
+    transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.35s ease,
+      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .work-card:global(.tilting) {
+    transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.35s ease, transform 0.08s linear;
+  }
+  .work-card:hover {
+    border-color: rgb(126 240 196 / 0.35);
+    box-shadow: 0 24px 50px -16px rgb(126 240 196 / 0.45), 0 8px 20px -12px rgb(0 0 0 / 0.6);
   }
   .work-card[hidden] {
     display: none;
@@ -94,11 +104,6 @@ const href = `/projects/${project.id}`;
     align-self: start;
     padding-top: 1.1rem;
   }
-  .badge.inline {
-    position: static;
-    justify-self: start;
-    margin: 0 0 0 0.4rem;
-  }
   .blurb {
     margin: 0;
     color: var(--ink-2);
@@ -109,41 +114,23 @@ const href = `/projects/${project.id}`;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .badge {
-    position: absolute;
-    left: 0.75rem;
-    top: 0.75rem;
-    z-index: 1;
-    padding: 0.3rem 0.7rem;
-    border-radius: var(--radius-pill);
-    background: rgb(3 4 4 / 0.78);
-    border: 1px solid rgb(255 255 255 / 0.12);
-    backdrop-filter: blur(6px);
-    color: var(--ink);
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-  }
   .text {
+    padding-inline: 0.4rem;
     display: grid;
     gap: 0.45rem;
-    padding-inline: 0.4rem;
+  }
+  .meta-line {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.9rem;
+    font-size: 0.85rem;
+  }
+  .ctx {
+    color: var(--warm);
   }
   .status {
-    margin: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
     color: var(--accent);
-    font-size: 0.82rem;
-    font-weight: 500;
-  }
-  .status::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
   }
   h3 {
     font-size: clamp(1.25rem, 2vw, 1.55rem);

@@ -67,7 +67,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
 <Base title={data.title} description={data.description ?? data.summary}>
   <article class="wrap case">
     <header class="head">
-      <a href="/projects" class="back">← All projects</a>
+      <a href="/projects" class="back">All projects</a>
       <p class="context">{data.context}</p>
       <h1>{data.title}</h1>
       <ul class="tags">
@@ -194,7 +194,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
                         <Image src={g.src} alt={g.alt} widths={[400, 700, 1000, 1400]} sizes="(max-width: 900px) 100vw, 50vw" quality={90} />
                       </div>
                       <figcaption class="meta">
-                        <span class="tag">{g.label}</span> · {g.caption}
+                        <span class="tag">{g.label}:</span> {g.caption}
                       </figcaption>
                     </figure>
                   ))}
@@ -207,7 +207,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
                     <figure>
                       <video src={v.src} poster={v.poster} aria-label={v.alt} autoplay muted loop playsinline preload="metadata" data-motion />
                       <figcaption class="meta">
-                        <span class="tag">{v.label}</span> · {v.caption}
+                        <span class="tag">{v.label}:</span> {v.caption}
                       </figcaption>
                     </figure>
                   ))}
@@ -251,7 +251,7 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
     <section class="more" aria-labelledby="more-title">
       <div class="more-head">
         <h2 id="more-title">Keep exploring</h2>
-        <a href="/projects" class="back">All projects →</a>
+        <a href="/projects" class="back">All projects</a>
       </div>
       <div class="more-grid">
         {more.map((p) => <WorkCard project={p} />)}
@@ -317,11 +317,8 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
   }
   .context {
     margin: 0.75rem 0 0;
-    padding: 0.3rem 0.75rem;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-pill);
-    font-size: 0.82rem;
-    color: var(--ink-2);
+    font-size: 0.95rem;
+    color: var(--warm);
   }
   h1 {
     font-size: clamp(2.3rem, 5.5vw, 4rem);
@@ -443,8 +440,8 @@ const num = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).p
     color: var(--ink);
   }
   .toc a:global(.active) {
-    color: var(--accent);
-    border-left-color: var(--accent);
+    color: var(--ink);
+    border-left-color: var(--ink-2);
   }
   .toc a.todo {
     font-style: italic;

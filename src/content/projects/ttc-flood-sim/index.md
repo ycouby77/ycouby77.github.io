@@ -3,7 +3,7 @@ title: TTC Flood Rerouting Simulation
 order: 4
 context: ES 1050 course project
 role: Wrote the original program, directed the 2026 rebuild
-status: Completed · interactive demo
+status: Completed, with an interactive demo
 categories: [Software]
 period: Winter 2025, rebuilt 2026
 disciplines: [Graph algorithms, GIS, Python]

@@ -10,7 +10,7 @@ const { role } = Astro.props;
 const href = role.project ? `/projects/${role.project}` : `/resume#${role.id}`;
 ---
 
-<article class="role-card">
+<article class="role-card" data-tilt>
   <div class="top">
     <span class="when">{role.period}</span>
     <span class:list={['status', { current: role.status === 'Current' }]}>{role.status}</span>
@@ -18,7 +18,7 @@ const href = role.project ? `/projects/${role.project}` : `/resume#${role.id}`;
   <h3><a href={href}>{role.title}</a></h3>
   <p class="org">{role.orgShort}</p>
   <p class="point">{role.points[0]}</p>
-  <span class="more" aria-hidden="true">{role.project ? 'See the project' : 'Read more'} →</span>
+  <span class="more" aria-hidden="true">{role.project ? 'See the project' : 'Read more'}</span>
 </article>
 
 <style>
@@ -31,12 +31,22 @@ const href = role.project ? `/projects/${role.project}` : `/resume#${role.id}`;
     border: 1px solid var(--line);
     border-radius: calc(var(--radius) + 6px);
     background: rgb(16 19 22 / 0.55);
-    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
   }
   .role-card:hover {
-    border-color: rgb(126 240 196 / 0.4);
     background: rgb(16 19 22 / 0.85);
-    transform: translateY(-2px);
+  }
+  /* Hover: the whole card leans toward the cursor (script in Base.astro) and a soft
+     green glow lifts it off the page. */
+  .role-card {
+    transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.35s ease,
+      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .role-card:global(.tilting) {
+    transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.35s ease, transform 0.08s linear;
+  }
+  .role-card:hover {
+    border-color: rgb(126 240 196 / 0.35);
+    box-shadow: 0 24px 50px -16px rgb(126 240 196 / 0.45), 0 8px 20px -12px rgb(0 0 0 / 0.6);
   }
   .top {
     display: flex;

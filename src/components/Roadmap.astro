@@ -100,7 +100,7 @@ const initial = items.find((it) => it.id === `m${doneMs.length ? doneMs[doneMs.l
 
   <div class="rm-detail" aria-live="polite">
     <p class="rm-meta">
-      <span data-rm-when>{initial.when}</span> · <span data-rm-status class:list={['rm-status', initial.status]}>{statusText[initial.status]}</span>
+      <span data-rm-when>{initial.when}</span>, <span data-rm-status class:list={['rm-status', initial.status]}>{statusText[initial.status]}</span>
     </p>
     <h4 data-rm-title>{initial.title}</h4>
     <p data-rm-text>{initial.text}</p>
@@ -289,7 +289,6 @@ const initial = items.find((it) => it.id === `m${doneMs.length ? doneMs[doneMs.l
   .rm-detail {
     padding: 1rem 1.15rem;
     border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
     border-radius: var(--radius);
     background: var(--surface);
   }

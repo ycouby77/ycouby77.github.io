@@ -2,7 +2,7 @@
 title: Baker Bot Neck Mechanism
 order: 2
 featured: true
-context: Baker Bot · WE First Club
+context: Baker Bot, WE First Club
 role: Designed and built the neck mechanism
 status: Neck mechanism
 categories: [Robotics, Mechanical]

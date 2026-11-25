@@ -82,7 +82,7 @@ I used Claude, an AI assistant, a lot along the way. It tutored me through the t
   src={howItWorks}
   size="narrow"
   alt="Cycloid disc with 25 lobes inside 26 ring pins, six output pins with bronze bushings, cam bearing in the centre"
-  caption="Disc profile drawn from the design parameters (26 pins on Ø50, Ø3 pins, e = 0.72 mm). I modeled the real disc directly in SolidWorks."
+  caption="Disc profile drawn from the design parameters (26 pins on Ø50, Ø3 pins, e = 0.72 mm). I modeled the disc itself directly in SolidWorks."
 />
 
 The motor shaft turns a cam with two lobes, each offset 0.72 mm from the axis and 180° apart. Each lobe carries a 6801 bearing, and each bearing sits in a cycloid disc. As the cam spins, each disc's centre orbits the motor axis without the disc spinning freely, because its 25 lobes are trapped by 26 fixed ring pins.
@@ -150,7 +150,7 @@ Every row is in my notebook's decision log.
 
 ## Printing to bearing tolerances
 
-Every bearing seat in this actuator is printed PETG, so the fits had to be measured rather than guessed. Before printing any real parts, I printed coupon plates that sweep each bearing bore and boss in 0.05 mm steps and tested them against the real bearings.
+Every bearing seat in this actuator is printed PETG, so the fits had to be measured rather than guessed. Before printing any actuator parts, I printed coupon plates that sweep each bearing bore and boss in 0.05 mm steps and tested them against the bearings.
 
 <Figure
   src={couponPlate}
@@ -165,7 +165,7 @@ What I found on the Bambu A1 with Elegoo PETG HF:
 - Bosses printed 0.2 to 0.3 mm small at every size.
 - Press fits landed at nominal + 0.10 mm for the 688 and 6801 bores and + 0.20 mm for the 6808.
 
-Then the real parts printed differently from the coupons. The output housing bore came out 51.9 where the coupon gave 52.1. A press fit that felt right over a 5 mm coupon was far too tight over the carrier's 16 mm boss, and the first 6808 stuck halfway down. The fix was a stepped boss: press fit only on the first bearing's 7 mm seat, slip fit above it.
+Then the actuator parts printed differently from the coupons. The output housing bore came out 51.9 where the coupon gave 52.1. A press fit that felt right over a 5 mm coupon was far too tight over the carrier's 16 mm boss, and the first 6808 stuck halfway down. The fix was a stepped boss: press fit only on the first bearing's 7 mm seat, slip fit above it.
 
 Some fits are tradeoffs. Ø3 pin holes vary print to print by as much as the sweep step, so I settled on 3.25. The disc roller holes went to 6.70 (minimum 6.44). That leaves about 0.11 mm of clearance, roughly 0.4° of output backlash on paper, but holes that are too tight would bind the gearbox, which is worse.
 
@@ -274,7 +274,7 @@ Nov 22, no load, logged at 200 Hz through the new test GUI.
   src={gui}
   scroll
   alt="Test GUI with position, velocity and voltage plots for a 10 degree step"
-  caption="Test GUI with a real 10° step log replayed: position, velocity and Uq against target."
+  caption="Test GUI replaying a recorded 10° step log: position, velocity and Uq against target."
 />
 
 ### What worked

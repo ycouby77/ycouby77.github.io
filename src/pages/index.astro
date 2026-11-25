@@ -78,7 +78,7 @@ const headTail = words.slice(-2).join(' ');
     <Contours peaks={[[0.95, 0.06], [0.02, 0.55]]} />
     <div class="section-head">
       <h2 class="section-title">Projects</h2>
-      <a class="see-all" href="/projects">All {projects.length} projects <Icon name="arrow-right" size={16} /></a>
+      <a class="see-all" href="/projects">All {projects.length} projects</a>
     </div>
     {
       homeGroups.map((g, gi) => (
@@ -95,7 +95,7 @@ const headTail = words.slice(-2).join(' ');
   <section id="experience" class="section wrap">
     <div class="section-head">
       <h2 class="section-title">Experience</h2>
-      <a class="see-all" href="/resume">Full resume <Icon name="arrow-right" size={16} /></a>
+      <a class="see-all" href="/resume">Full resume</a>
     </div>
     <div class="role-grid">
       {roles.map((r) => <RoleCard role={r} />)}
@@ -113,7 +113,7 @@ const headTail = words.slice(-2).join(' ');
         <span class="hi-face"><PhotoSlot photo={headshot} round sizes="64px" /></span>
       </h2>
       <p class="lede">{teaser}</p>
-      <a class="btn" href="/about">More about me <Icon name="arrow-right" size={16} /></a>
+      <a class="btn" href="/about">More about me</a>
     </div>
   </section>
 
@@ -125,7 +125,7 @@ const headTail = words.slice(-2).join(' ');
         <span class="li-name">{profile.name}</span>
         <span class="li-sub">{profile.program}</span>
       </span>
-      <span class="li-cta">View LinkedIn profile <Icon name="arrow-up-right" size={16} /></span>
+      <span class="li-cta">View LinkedIn profile</span>
     </a>
     <dl class="contact-grid">
       <div><dt class="meta">Email</dt><dd><a href={`mailto:${profile.email}`}>{profile.email}</a></dd></div>
@@ -157,18 +157,6 @@ const headTail = words.slice(-2).join(' ');
     position: relative;
     z-index: 1;
     padding-bottom: clamp(7rem, 18vh, 11rem);
-  }
-  /* Availability: a real status, so it gets a small steady status dot. */
-  .avail::before {
-    content: '';
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    margin-right: 0.5rem;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-    vertical-align: 0.1em;
   }
   .hero h1 em {
     font-style: italic;
